@@ -91,13 +91,20 @@ Key decisions (with reasoning in `RESEARCH.md` §3):
   popups, announcements, suppression/damage vignettes, camera shake, tank HUD, scoreboard.
 - **Progression:** 14 ranks, XP from all score events, persistent career stats, rank-gated unlocks.
 
-### Testing
-- `./gradlew runGameTestServer`: 18 in-world tests (ballistics, penetration, cover, headshots,
-  allies, spread maths, reload, grenade, rockets vs tank, armour, crushing, capture, contest,
-  bleed, downed/revive tickets, tower collapse, attachments).
-- `WARFRONT_AUTOTEST=1 xvfb-run ./gradlew runClient`: scripted end-to-end client session that
-  generates a battlefield, deploys, aims, fires, watches the AI battle, drives the tank,
-  collapses the tower and saves screenshots to `run/screenshots/`, logging battle telemetry.
+### Testing (verified 2026-11-26)
+- `./gradlew runGameTestServer`: **18/18 pass**. Covers ballistics, penetration, sandbag cover,
+  headshots, pass-through allies, spread cone maths, reload, frag grenade, rocket vs tank, armour
+  model, crushability, flag capture, contested flags, ticket bleed, downed/revive ticket
+  bookkeeping, tower collapse and attachment trade-offs.
+- `WARFRONT_AUTOTEST=1 xvfb-run ./gradlew runClient` (Mesa software GL): full scripted session
+  with no crashes. It generates a 5-flag battlefield, deploys, aims, fires, watches the AI war,
+  rides and fires the tank, collapses the tower and saves 13 screenshots to `run/screenshots/`.
+  Telemetry from the last run (~2 min of battle): both armies at 12-13 soldiers, flags trading
+  hands (B: neutral → Coalition → Legion), tickets 150:150 → 85:125 from casualties plus bleed,
+  medics reviving downed soldiers, AI-crewed tanks deploying from pads.
+- Bugs found by these runs and fixed: AI squads pruned on creation (soldiers idled), far side of
+  the battlefield unloading, out-of-bounds gun models, item atlas texture, minimap mirroring,
+  revive-goal NPE, bullet penetration re-hitting the same block, oversized head hitbox.
 
 ## Known issues / limitations
 - First-person arm placement is approximated (procedural, no keyframes).
@@ -106,7 +113,9 @@ Key decisions (with reasoning in `RESEARCH.md` §3):
 - Tank movement is arcade kinematics; no slope tilt of the hull.
 - Downed players are invulnerable until revived or they bleed out (matches BF4); there is no
   finisher.
-- Verified on integrated server only; a dedicated-server smoke test is still to do.
+- Verified on the integrated server and the GameTest server only. A dedicated-server smoke test
+  (`./gradlew runServer`, which needs `run/eula.txt` accepted by you) is still to do.
+- With the default GUI scale at 720p the HUD is dense; the kill feed is drawn at 75% scale.
 
 ## Next priorities
 1. Dedicated server smoke test and multiplayer polish (scope glint for other players,
