@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "side": "warfront:block/resupply_crate",
+    "end": "warfront:block/resupply_crate_top"
+  }
+}

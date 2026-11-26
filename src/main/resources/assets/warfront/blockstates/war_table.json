@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "warfront:block/war_table"
+    },
+    "facing=east": {
+      "model": "warfront:block/war_table",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "warfront:block/war_table",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "warfront:block/war_table",
+      "y": 270
+    }
+  }
+}

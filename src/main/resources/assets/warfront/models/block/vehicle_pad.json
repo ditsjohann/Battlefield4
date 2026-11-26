@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_top",
+  "textures": {
+    "top": "warfront:block/vehicle_pad",
+    "side": "warfront:block/capture_point_side"
+  }
+}

@@ -1,0 +1,428 @@
+{
+  "bag_drop": {
+    "sounds": [
+      {
+        "name": "warfront:bag_drop"
+      }
+    ],
+    "subtitle": "subtitles.warfront.bag_drop"
+  },
+  "bullet_crack": {
+    "sounds": [
+      {
+        "name": "warfront:bullet_crack"
+      }
+    ],
+    "subtitle": "subtitles.warfront.bullet_crack"
+  },
+  "bullet_impact": {
+    "sounds": [
+      {
+        "name": "warfront:bullet_impact"
+      }
+    ],
+    "subtitle": "subtitles.warfront.bullet_impact"
+  },
+  "c4_beep": {
+    "sounds": [
+      {
+        "name": "warfront:c4_beep"
+      }
+    ],
+    "subtitle": "subtitles.warfront.c4_beep"
+  },
+  "capture_tick": {
+    "sounds": [
+      {
+        "name": "warfront:capture_tick"
+      }
+    ],
+    "subtitle": "subtitles.warfront.capture_tick"
+  },
+  "carbine_shot": {
+    "sounds": [
+      {
+        "name": "warfront:carbine_shot"
+      }
+    ],
+    "subtitle": "subtitles.warfront.carbine_shot"
+  },
+  "carbine_shot_far": {
+    "sounds": [
+      {
+        "name": "warfront:carbine_shot_far",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.warfront.carbine_shot_far"
+  },
+  "defeat": {
+    "sounds": [
+      {
+        "name": "warfront:defeat"
+      }
+    ],
+    "subtitle": "subtitles.warfront.defeat"
+  },
+  "defib": {
+    "sounds": [
+      {
+        "name": "warfront:defib"
+      }
+    ],
+    "subtitle": "subtitles.warfront.defib"
+  },
+  "deploy": {
+    "sounds": [
+      {
+        "name": "warfront:deploy"
+      }
+    ],
+    "subtitle": "subtitles.warfront.deploy"
+  },
+  "dry_fire": {
+    "sounds": [
+      {
+        "name": "warfront:dry_fire"
+      }
+    ],
+    "subtitle": "subtitles.warfront.dry_fire"
+  },
+  "explosion": {
+    "sounds": [
+      {
+        "name": "warfront:explosion",
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.warfront.explosion"
+  },
+  "explosion_far": {
+    "sounds": [
+      {
+        "name": "warfront:explosion_far",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.warfront.explosion_far"
+  },
+  "fire_mode": {
+    "sounds": [
+      {
+        "name": "warfront:fire_mode"
+      }
+    ],
+    "subtitle": "subtitles.warfront.fire_mode"
+  },
+  "flag_captured": {
+    "sounds": [
+      {
+        "name": "warfront:flag_captured"
+      }
+    ],
+    "subtitle": "subtitles.warfront.flag_captured"
+  },
+  "flag_lost": {
+    "sounds": [
+      {
+        "name": "warfront:flag_lost"
+      }
+    ],
+    "subtitle": "subtitles.warfront.flag_lost"
+  },
+  "glass_shatter": {
+    "sounds": [
+      {
+        "name": "warfront:glass_shatter"
+      }
+    ],
+    "subtitle": "subtitles.warfront.glass_shatter"
+  },
+  "grenade_explode": {
+    "sounds": [
+      {
+        "name": "warfront:grenade_explode"
+      }
+    ],
+    "subtitle": "subtitles.warfront.grenade_explode"
+  },
+  "grenade_pin": {
+    "sounds": [
+      {
+        "name": "warfront:grenade_pin"
+      }
+    ],
+    "subtitle": "subtitles.warfront.grenade_pin"
+  },
+  "headshot": {
+    "sounds": [
+      {
+        "name": "warfront:headshot"
+      }
+    ],
+    "subtitle": "subtitles.warfront.headshot"
+  },
+  "hitmarker": {
+    "sounds": [
+      {
+        "name": "warfront:hitmarker"
+      }
+    ],
+    "subtitle": "subtitles.warfront.hitmarker"
+  },
+  "kill_confirm": {
+    "sounds": [
+      {
+        "name": "warfront:kill_confirm"
+      }
+    ],
+    "subtitle": "subtitles.warfront.kill_confirm"
+  },
+  "lmg_shot": {
+    "sounds": [
+      {
+        "name": "warfront:lmg_shot"
+      }
+    ],
+    "subtitle": "subtitles.warfront.lmg_shot"
+  },
+  "lmg_shot_far": {
+    "sounds": [
+      {
+        "name": "warfront:lmg_shot_far",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.warfront.lmg_shot_far"
+  },
+  "pistol_shot": {
+    "sounds": [
+      {
+        "name": "warfront:pistol_shot"
+      }
+    ],
+    "subtitle": "subtitles.warfront.pistol_shot"
+  },
+  "pistol_shot_far": {
+    "sounds": [
+      {
+        "name": "warfront:pistol_shot_far",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.warfront.pistol_shot_far"
+  },
+  "reload_bolt": {
+    "sounds": [
+      {
+        "name": "warfront:reload_bolt"
+      }
+    ],
+    "subtitle": "subtitles.warfront.reload_bolt"
+  },
+  "reload_mag_in": {
+    "sounds": [
+      {
+        "name": "warfront:reload_mag_in"
+      }
+    ],
+    "subtitle": "subtitles.warfront.reload_mag_in"
+  },
+  "reload_mag_out": {
+    "sounds": [
+      {
+        "name": "warfront:reload_mag_out"
+      }
+    ],
+    "subtitle": "subtitles.warfront.reload_mag_out"
+  },
+  "repair_loop": {
+    "sounds": [
+      {
+        "name": "warfront:repair_loop"
+      }
+    ],
+    "subtitle": "subtitles.warfront.repair_loop"
+  },
+  "resupply": {
+    "sounds": [
+      {
+        "name": "warfront:resupply"
+      }
+    ],
+    "subtitle": "subtitles.warfront.resupply"
+  },
+  "ricochet": {
+    "sounds": [
+      {
+        "name": "warfront:ricochet"
+      }
+    ],
+    "subtitle": "subtitles.warfront.ricochet"
+  },
+  "rifle_shot": {
+    "sounds": [
+      {
+        "name": "warfront:rifle_shot"
+      }
+    ],
+    "subtitle": "subtitles.warfront.rifle_shot"
+  },
+  "rifle_shot_far": {
+    "sounds": [
+      {
+        "name": "warfront:rifle_shot_far",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.warfront.rifle_shot_far"
+  },
+  "rocket_launch": {
+    "sounds": [
+      {
+        "name": "warfront:rocket_launch"
+      }
+    ],
+    "subtitle": "subtitles.warfront.rocket_launch"
+  },
+  "rocket_loop": {
+    "sounds": [
+      {
+        "name": "warfront:rocket_loop"
+      }
+    ],
+    "subtitle": "subtitles.warfront.rocket_loop"
+  },
+  "score_ping": {
+    "sounds": [
+      {
+        "name": "warfront:score_ping"
+      }
+    ],
+    "subtitle": "subtitles.warfront.score_ping"
+  },
+  "shotgun_shot": {
+    "sounds": [
+      {
+        "name": "warfront:shotgun_shot"
+      }
+    ],
+    "subtitle": "subtitles.warfront.shotgun_shot"
+  },
+  "shotgun_shot_far": {
+    "sounds": [
+      {
+        "name": "warfront:shotgun_shot_far",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.warfront.shotgun_shot_far"
+  },
+  "sniper_shot": {
+    "sounds": [
+      {
+        "name": "warfront:sniper_shot"
+      }
+    ],
+    "subtitle": "subtitles.warfront.sniper_shot"
+  },
+  "sniper_shot_far": {
+    "sounds": [
+      {
+        "name": "warfront:sniper_shot_far",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.warfront.sniper_shot_far"
+  },
+  "spot": {
+    "sounds": [
+      {
+        "name": "warfront:spot"
+      }
+    ],
+    "subtitle": "subtitles.warfront.spot"
+  },
+  "suppressed_shot": {
+    "sounds": [
+      {
+        "name": "warfront:suppressed_shot"
+      }
+    ],
+    "subtitle": "subtitles.warfront.suppressed_shot"
+  },
+  "tank_cannon": {
+    "sounds": [
+      {
+        "name": "warfront:tank_cannon"
+      }
+    ],
+    "subtitle": "subtitles.warfront.tank_cannon"
+  },
+  "tank_engine": {
+    "sounds": [
+      {
+        "name": "warfront:tank_engine"
+      }
+    ],
+    "subtitle": "subtitles.warfront.tank_engine"
+  },
+  "ticket_warning": {
+    "sounds": [
+      {
+        "name": "warfront:ticket_warning"
+      }
+    ],
+    "subtitle": "subtitles.warfront.ticket_warning"
+  },
+  "tower_alarm": {
+    "sounds": [
+      {
+        "name": "warfront:tower_alarm",
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.warfront.tower_alarm"
+  },
+  "tower_collapse": {
+    "sounds": [
+      {
+        "name": "warfront:tower_collapse",
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.warfront.tower_collapse"
+  },
+  "turret_traverse": {
+    "sounds": [
+      {
+        "name": "warfront:turret_traverse"
+      }
+    ],
+    "subtitle": "subtitles.warfront.turret_traverse"
+  },
+  "vehicle_hit": {
+    "sounds": [
+      {
+        "name": "warfront:vehicle_hit"
+      }
+    ],
+    "subtitle": "subtitles.warfront.vehicle_hit"
+  },
+  "vehicle_warning": {
+    "sounds": [
+      {
+        "name": "warfront:vehicle_warning"
+      }
+    ],
+    "subtitle": "subtitles.warfront.vehicle_warning"
+  },
+  "victory": {
+    "sounds": [
+      {
+        "name": "warfront:victory"
+      }
+    ],
+    "subtitle": "subtitles.warfront.victory"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "MPM",
+    "LCL",
+    "L L"
+  ],
+  "key": {
+    "M": {
+      "item": "minecraft:map"
+    },
+    "P": {
+      "item": "minecraft:paper"
+    },
+    "L": {
+      "tag": "minecraft:logs"
+    },
+    "C": {
+      "item": "minecraft:compass"
+    }
+  },
+  "result": {
+    "id": "warfront:war_table",
+    "count": 1
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_top",
+  "textures": {
+    "top": "warfront:block/hq_beacon",
+    "side": "warfront:block/capture_point_side"
+  }
+}
