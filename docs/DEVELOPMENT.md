@@ -156,6 +156,19 @@ Key decisions (with reasoning in `RESEARCH.md` §3):
   mid-reload, sprint and third-person shots, plus prone and a gear line-up, and logs magazine,
   reserve, damage, reload and fire-mode bookkeeping. Every gun passes.
 
+### v0.3.1: gun visual rework
+- Texture painter rewritten. Variation is luminance-only (the old per-channel noise caused hue
+  speckle), with real finishes: anodised and parkerised metal, polymer, FDE, flowing wood grain
+  and coated optic glass. Bevel highlights replace random edge wear, and roll marks are small and
+  low-contrast. Textures are 512x512 at 10-12 px per model unit, with a 1px extruded gutter per
+  face so mipmaps don't bleed.
+- Shape refinement: barrels, tubes, muzzles, suppressors and scope parts are octagonal prisms
+  (a box plus its 45-degree twin), and receivers, handguards, stocks and mags have chamfered
+  profiles.
+- Fixed two magazine parts whose rotation was passed in the texture-detail slot and silently
+  ignored.
+- Hip pose moved down and right, canted so the stock leaves the frame as in BF4.
+
 ### Testing (verified 2026-11-26)
 - **Dedicated server:** Forge's `server_gametest` launch target runs as `Dist.DEDICATED_SERVER`
   (client classes stripped), so the GameTest suite also proves the mod loads and runs on the

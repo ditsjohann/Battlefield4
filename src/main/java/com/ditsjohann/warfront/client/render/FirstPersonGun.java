@@ -144,11 +144,12 @@ public final class FirstPersonGun {
         float sight = sightHeight(type, loadout.optic());
         boolean pistol = type.category == WeaponCategory.PISTOL;
         // ---- anchor: hip pose sits low-right and angled slightly inward; ADS centres the sight line
-        float hx = pistol ? 0.2f : 0.25f, hy = pistol ? -0.205f : -0.2f, hz = pistol ? -0.5f : -0.6f;
+        float hx = pistol ? 0.22f : 0.3f, hy = pistol ? -0.23f : -0.25f, hz = pistol ? -0.58f : -0.64f;
         float ax = 0f, ay = -(sight - 8f) * S, az = pistol ? -0.36f : -0.32f;
         ps.pushPose();
         ps.translate(Mth.lerp(ads, hx, ax), Mth.lerp(ads, hy, ay) - equip * 0.55f, Mth.lerp(ads, hz, az));
-        ps.mulPose(Axis.YP.rotationDegrees(3.5f * hip));
+        ps.mulPose(Axis.YP.rotationDegrees(6.0f * hip));
+        ps.mulPose(Axis.XP.rotationDegrees((pistol ? 1.5f : 5.0f) * hip));
         ps.mulPose(Axis.ZP.rotationDegrees(2.0f * hip));
 
         // ---- walk cycle (figure eight), breathing, turn sway, jump/land

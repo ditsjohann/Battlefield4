@@ -23,7 +23,7 @@ import random
 from PIL import Image
 
 ROOT = os.path.join(os.path.dirname(__file__), "..", "src", "main", "resources", "assets", "warfront")
-TEX = 256
+TEX = 512
 GEOM = 0.6  # geometry shrink so long guns fit the -16..32 model bounds; display scales compensate
 R = random.Random(17)
 
@@ -63,6 +63,8 @@ class Part:
         self.frm = frm
         self.to = to
         self.mat = mat
+        if isinstance(detail, dict) and "angle" in detail:  # rotation passed positionally
+            detail, rot = None, detail
         self.detail = detail or {}
         if isinstance(self.detail, str):
             self.detail = {f: self.detail for f in ("north", "south", "east", "west", "up", "down")}
@@ -377,111 +379,181 @@ FONT = {  # 3x5 pixel glyphs for stamped markings
 
 
 def clamp(v):
-    return max(0, min(255, int(v)))
+    return max(0, min(255, int(round(v))))
 
 
 def shade(c, f):
     return tuple(clamp(x * f) for x in c)
 
 
-def paint_face(img, rect, mat, detail, face, dims, mark):
-    """rect = (x0, y0, w, h) in pixels. dims = (du, dv) face size in model units."""
+def mix(a, b, t):
+    return tuple(a[i] + (b[i] - a[i]) * t for i in range(3))
+
+
+def _hash(ix, iy, seed):
+    h = (ix * 374761393 + iy * 668265263 + seed * 2147483647) & 0xFFFFFFFF
+    h = ((h ^ (h >> 13)) * 1274126177) & 0xFFFFFFFF
+    return ((h ^ (h >> 16)) & 0xFFFF) / 65535.0
+
+
+def vnoise(x, y, seed):
+    """Smooth value noise in [0, 1]."""
+    ix, iy = math.floor(x), math.floor(y)
+    fx, fy = x - ix, y - iy
+    fx, fy = fx * fx * (3 - 2 * fx), fy * fy * (3 - 2 * fy)
+    a, b = _hash(ix, iy, seed), _hash(ix + 1, iy, seed)
+    c, d = _hash(ix, iy + 1, seed), _hash(ix + 1, iy + 1, seed)
+    return (a + (b - a) * fx) + ((c + (d - c) * fx) - (a + (b - a) * fx)) * fy
+
+
+# Physically-motivated finishes. All variation is luminance-only (no per-channel jitter), so
+# surfaces never pick up hue shifts; colour only changes where the material really changes.
+FINISH = {
+    # mat: (grain amplitude, cloud amplitude, edge highlight, edge shadow)
+    "receiver": (0.020, 0.035, 1.30, 0.80),   # hard-anodised aluminium
+    "metal": (0.030, 0.040, 1.25, 0.80),      # parkerised steel
+    "steel": (0.030, 0.030, 1.20, 0.82),
+    "blued": (0.018, 0.045, 1.35, 0.78),
+    "polymer": (0.028, 0.025, 1.18, 0.82),
+    "tan": (0.022, 0.030, 1.10, 0.86),
+    "coyote": (0.022, 0.030, 1.10, 0.86),
+    "od": (0.022, 0.030, 1.12, 0.84),
+    "olive_drab": (0.022, 0.030, 1.12, 0.84),
+    "wood": (0.0, 0.0, 1.10, 0.85),
+    "rubber": (0.035, 0.015, 1.10, 0.85),
+    "brass": (0.020, 0.050, 1.20, 0.85),
+    "glass": (0.0, 0.0, 1.0, 1.0),
+    "red": (0.0, 0.0, 1.0, 1.0),
+    "white": (0.02, 0.02, 1.05, 0.9),
+}
+
+
+def paint_face(img, rect, mat, detail, face, dims, mark, ppu, seed):
+    """rect = (x0, y0, w, h): the face's pixels. A 1px gutter around it is filled by extrusion."""
     px = img.load()
     x0, y0, w, h = rect
     base = MATS[mat]
-    light = {"up": 1.14, "down": 0.68, "north": 0.92, "south": 0.92, "east": 1.0, "west": 0.95}[face]
-    is_metal = mat in ("receiver", "metal", "steel", "blued")
-    noise = 5 if mat in ("polymer", "rubber") else 8 if is_metal else 11
-    # length axis: for side faces u runs along the gun (z), for up/down faces v does
-    along_u = face in ("east", "west")
+    grain, cloud, hi, lo = FINISH[mat]
+    side_face = face in ("east", "west", "north", "south")
+    along_u = face in ("east", "west")       # u runs along the gun on the long side faces
     along_v = face in ("up", "down")
+    out = [[None] * w for _ in range(h)]
     for j in range(h):
         for i in range(w):
-            c = tuple(x + R.uniform(-noise, noise) for x in base)
-            f = light
-            # vertical gradient on side faces (lit from above)
-            if face in ("east", "west", "north", "south") and h > 2:
-                f *= 1.08 - 0.16 * (j / (h - 1))
-            # crisp bevels: dark rim, bright top lip
-            if i == 0 or i == w - 1 or j == h - 1:
-                f *= 0.8
-            if j == 0 and face != "down":
-                f *= 1.18 if is_metal or mat in ("polymer", "tan", "od", "coyote") else 1.08
+            u, v = i / ppu, j / ppu
+            # length / across coordinates in model units, for patterns that follow the barrel axis
+            L, A = (u, v) if along_u else (v, u) if along_v else (u, v)
+            f = 1.0
+            f += (vnoise(u * 0.9, v * 0.9, seed) - 0.5) * 2 * cloud
+            f += (_hash(i, j, seed + 7) - 0.5) * 2 * grain
+            if side_face and h > 3:
+                f *= 1.05 - 0.10 * (j / (h - 1))
+            c = base
             if mat == "wood":
-                t = (i if along_u else j) * 0.7 + math.sin((j if along_u else i) * 0.9) * 1.6
-                if int(t) % 5 == 0:
-                    f *= 0.86
-            if mat == "polymer" and (i * 7 + j * 13) % 11 == 0:
-                f *= 0.9
-            if is_metal and (i == 0 or j == 0 or i == w - 1) and R.random() < 0.22:
-                c = shade(MATS["steel"], 1.35)  # edge wear shows bright metal
+                # long flowing grain with darker late-wood lines and a soft varnish sheen
+                warp = vnoise(L * 0.35, A * 0.6, seed) * 3.0
+                g = math.sin((A * 5.2 + warp) * math.pi)
+                streak = vnoise(L * 0.15, A * 3.5, seed + 3)
+                c = mix(hexc("#5e3a20"), hexc("#80542f"), 0.5 + 0.35 * g * (0.6 + 0.4 * streak))
+                if g > 0.86:
+                    c = mix(c, hexc("#3e2412"), 0.55)
+                f *= 0.97 + 0.06 * vnoise(L * 2.0, A * 2.0, seed + 5)
+            if mat == "brass":
+                f *= 0.9 + 0.25 * (1 - j / max(1, h - 1))
             d = detail
-            if d == "rail":
-                k = i if along_u else j if along_v else -1
-                if k >= 0 and k % 4 in (2, 3):
-                    f *= 0.55
-            elif d == "vent" and w > 6 and h > 3:
-                k = i if along_u else j
-                m = j if along_u else i
-                span = h if along_u else w
-                if k % 7 in (2, 3, 4) and span * 0.28 < m < span * 0.72:
-                    f *= 0.35
+            if d == "rail" and (along_u or along_v):
+                k = (L * ppu) % (0.62 * ppu)
+                slot = k > 0.36 * ppu
+                f *= 0.58 if slot else 1.06
+                if not slot and k < 1:
+                    f *= 1.12
+            elif d == "vent":
+                # M-LOK style rounded slots with a lit lower lip
+                span = (h if along_u else w) / ppu
+                pitch, sl = 1.45, 0.85
+                k = L % pitch
+                m = A
+                if span > 1.2 and 0.18 * span < m < 0.82 * span and 0.25 < k < 0.25 + sl:
+                    edge = min(k - 0.25, 0.25 + sl - k, m - 0.18 * span, 0.82 * span - m)
+                    f *= 0.34 if edge > 0.08 else 0.55
+                    if 0.82 * span - m < 0.12:
+                        f *= 1.6
             elif d == "grip":
-                if (i + j) % 3 == 0 or (i - j) % 3 == 0:
-                    f *= 0.72
+                # fine diamond checkering, low contrast
+                q = (i + j) % 4 == 0 or (i - j) % 4 == 0
+                f *= 0.86 if q else 1.03
             elif d == "ribs":
-                if j % 4 == 3:
-                    f *= 0.65
-                elif j % 4 == 0:
-                    f *= 1.1
-            elif d == "flute" and h >= 3:
-                if j in (h // 3, 2 * h // 3):
-                    f *= 0.6
+                k = (A * ppu) % (0.55 * ppu)
+                f *= 0.72 if k < 1 else 1.08 if k < 2 else 1.0
+            elif d == "flute" and side_face:
+                hgt = h / ppu
+                for fy in (hgt * 0.33, hgt * 0.66):
+                    if abs(v - fy) < 0.09:
+                        f *= 0.62
+                    elif 0.09 <= v - fy < 0.18:
+                        f *= 1.12
             elif d == "ports":
-                k = i if along_u else j
-                m = j if along_u else i
-                span = h if along_u else w
-                if k % 4 in (1, 2) and span * 0.3 < m < span * 0.7:
-                    f *= 0.25
+                span = (h if along_u else w) / ppu
+                k = L % 0.6
+                if 0.15 < k < 0.4 and 0.3 * span < A < 0.7 * span:
+                    f *= 0.22
             elif d == "serrate":
-                if i > w * 0.62 and i % 2 == 0:
+                if L > (w / ppu) * 0.6 and (L * ppu) % 3 < 1.2:
                     f *= 0.6
             elif d == "stipple":
-                if R.random() < 0.18:
-                    f *= 0.82
+                if _hash(i // 2, j // 2, seed + 11) < 0.22:
+                    f *= 0.86
             elif d == "lens":
-                gl = 0.55 + 0.7 * (1 - j / max(1, h - 1))
-                c = shade(MATS["glass"], gl)
-                if i < w * 0.35 and j < h * 0.35:
-                    c = (200, 225, 255)
-                f = 1
-            if mat == "red":
-                c = (255, 60, 40)
+                t = j / max(1, h - 1)
+                c = mix(hexc("#2f5b7a"), hexc("#0c1820"), t)
+                c = mix(c, hexc("#6a3d7a"), 0.25 * vnoise(u * 2, v * 2, seed))  # coating tint
+                if i < w * 0.4 and j < h * 0.35:
+                    c = mix(c, (225, 235, 255), 0.7)
                 f = 1.0
-            px[x0 + i, y0 + j] = shade(c, f)
-    # ejection port: dark window with brass bolt face
-    if detail == "port" and w > 12 and h > 5:
-        pw, ph = int(w * 0.32), max(3, int(h * 0.42))
-        sx, sy = int(w * 0.42), int(h * 0.22)
+            if mat == "red":
+                c, f = (255, 52, 34), 1.0
+            if mat == "glass" and d != "lens":
+                c, f = hexc("#1b3346"), 1.0
+            out[j][i] = shade(c, f)
+    # bevels: a thin highlight on the top edge, soft shadow on the others (crisp at any ppu)
+    if mat not in ("glass", "red") and detail != "lens":
+        for i in range(w):
+            if face != "down":
+                out[0][i] = shade(out[0][i], hi)
+            out[h - 1][i] = shade(out[h - 1][i], lo)
+        for j in range(1, h - 1):
+            out[j][0] = shade(out[j][0], 0.5 + 0.5 * lo)
+            out[j][w - 1] = shade(out[j][w - 1], 0.5 + 0.5 * lo)
+    # ejection port: dark window with the bolt carrier showing
+    if detail == "port" and w > 14 and h > 6:
+        pw, ph = int(w * 0.3), max(4, int(h * 0.4))
+        sx, sy = int(w * 0.42), int(h * 0.24)
         for j in range(ph):
             for i in range(pw):
-                c = (14, 14, 16)
-                if 1 <= j <= ph - 2 and pw * 0.3 < i < pw * 0.75:
-                    c = shade(MATS["brass"], 0.8 + 0.3 * (1 - j / ph))
-                px[x0 + sx + i, y0 + sy + j] = c
-        for i in range(pw):  # port cover hinge line
-            px[x0 + sx + i, y0 + sy + ph] = (60, 62, 66)
-    # stamped markings
-    if detail == "stamp" and mark and w > len(mark) * 4 + 4 and h > 7:
-        sx = x0 + 3
-        sy = y0 + h - 8
+                c = (16, 16, 18)
+                if 1 <= j <= ph - 2 and 1 <= i <= pw - 2:
+                    c = shade(hexc("#6c6f73"), 0.75 + 0.35 * (1 - j / ph))
+                    if pw * 0.35 < i < pw * 0.62:
+                        c = shade(MATS["brass"], 0.85)
+                out[sy + j][sx + i] = c
+        for i in range(pw):
+            out[min(h - 1, sy + ph)][sx + i] = shade(out[min(h - 1, sy + ph)][sx + i], 1.35)
+    # engraved markings: small, low contrast, like real roll marks
+    if detail == "stamp" and mark and w > len(mark) * 4 + 6 and h > 9:
+        sx = 3
+        sy = h - 8
+        ink = shade(base, 1.55) if sum(base) < 300 else shade(base, 0.7)
         for ch in mark:
             g = FONT.get(ch)
             if g:
                 for gi, bit in enumerate(g):
                     if bit == "1":
-                        px[sx + gi % 3, sy + gi // 3] = (200, 200, 196)
+                        out[sy + gi // 3][sx + gi % 3] = ink
             sx += 4
+    # write with a 1px extruded gutter so mipmaps/filtering never bleed neighbouring faces
+    for j in range(-1, h + 1):
+        for i in range(-1, w + 1):
+            px[x0 + i, y0 + j] = out[min(h - 1, max(0, j))][min(w - 1, max(0, i))] + (255,)
 
 
 class Packer:
@@ -490,15 +562,16 @@ class Packer:
         self.x = self.y = self.row = 0
 
     def place(self, w, h):
-        if self.x + w > self.size:
+        w2, h2 = w + 2, h + 2  # gutter
+        if self.x + w2 > self.size:
             self.x = 0
-            self.y += self.row + 1
+            self.y += self.row
             self.row = 0
-        if self.y + h > self.size:
+        if self.y + h2 > self.size:
             raise OverflowError
-        r = (self.x, self.y, w, h)
-        self.x += w + 1
-        self.row = max(self.row, h)
+        r = (self.x + 1, self.y + 1, w, h)
+        self.x += w2
+        self.row = max(self.row, h2)
         return r
 
 
@@ -511,12 +584,11 @@ def face_dims(p, face):
 
 
 def build_texture(gid, parts, mark):
-    for ppu in (6, 5, 4, 3):
+    for ppu in (12, 11, 10, 9, 8, 7, 6):
         img = Image.new("RGBA", (TEX, TEX), (0, 0, 0, 0))
         pk = Packer(TEX)
         uvs = {}
         try:
-            # big faces first packs tighter
             jobs = []
             for idx, p in enumerate(parts):
                 for f in FACES:
@@ -527,10 +599,10 @@ def build_texture(gid, parts, mark):
             for h, w, idx, f, du, dv in jobs:
                 r = pk.place(w, h)
                 p = parts[idx]
-                paint_face(img, r, p.mat, p.detail.get(f), f, (du, dv), mark)
+                paint_face(img, r, p.mat, p.detail.get(f), f, (du, dv), mark, ppu, seed=idx * 31 + 5)
                 x0, y0, ww, hh = r
                 s = 16.0 / TEX
-                uvs[(idx, f)] = [round(x0 * s, 4), round(y0 * s, 4), round((x0 + ww) * s, 4), round((y0 + hh) * s, 4)]
+                uvs[(idx, f)] = [round(x0 * s, 5), round(y0 * s, 5), round((x0 + ww) * s, 5), round((y0 + hh) * s, 5)]
         except OverflowError:
             continue
         path = os.path.join(ROOT, "textures", "item", "gun", gid + ".png")
@@ -538,6 +610,37 @@ def build_texture(gid, parts, mark):
         img.save(path)
         return uvs, ppu
     raise RuntimeError("texture overflow for " + gid)
+
+
+# ------------------------------------------------------------------ shape refinement
+TUBES = {"barrel", "gas_tube", "buffer_tube", "buffer", "muzzle", "tube", "can", "can_cap", "ring_f", "ring_r",
+         "obj_bell", "eyepiece", "bolt_knob", "gas_block", "obj_lens", "monopod"}
+NO_CHAMFER = {"rail", "lens"}
+
+
+def refine(parts):
+    """Round off the box look: tubes become octagonal prisms (box + 45-degree twin around the
+    barrel axis); chunky bodies get chamfered corners (two overlapping, slightly inset boxes)."""
+    out = []
+    for p in parts:
+        dx, dy, dz = (p.to[i] - p.frm[i] for i in range(3))
+        if p.name in TUBES and p.rot is None and abs(dx - dy) < 0.35 and p.mat not in ("glass",):
+            out.append(p)
+            cx, cy, cz = ((p.frm[i] + p.to[i]) / 2 for i in range(3))
+            s = (dx + dy) / 2 * 0.98
+            twin = Part([cx - s / 2, cy - s / 2, p.frm[2]], [cx + s / 2, cy + s / 2, p.to[2]], p.mat, dict(p.detail),
+                        {"angle": 45, "axis": "z", "origin": [cx, cy, cz]}, p.group, p.name)
+            out.append(twin)
+            continue
+        details = set(p.detail.values())
+        if dx >= 1.3 and dy >= 1.3 and dz >= 1.0 and p.mat not in ("glass", "red", "brass") and not (details & NO_CHAMFER):
+            k = min(0.22, dx * 0.12, dy * 0.12)
+            a = Part([p.frm[0] + k, p.frm[1], p.frm[2]], [p.to[0] - k, p.to[1], p.to[2]], p.mat, dict(p.detail), p.rot, p.group, p.name)
+            b = Part([p.frm[0], p.frm[1] + k, p.frm[2] + 0.001], [p.to[0], p.to[1] - k, p.to[2] - 0.001], p.mat, dict(p.detail), p.rot, p.group, p.name)
+            out += [a, b]
+            continue
+        out.append(p)
+    return out
 
 
 def element(p, idx, uvs, tex_ref):
@@ -573,14 +676,14 @@ def gen():
     sights = {}
     for gid, fn in GUNS.items():
         spec = fn()
-        base = spec["parts"]
+        base = refine(spec["parts"])
         optics = GUN_OPTICS[gid]
         muzzle = next(p for p in base if p.name == "muzzle")
         all_parts = list(base)
         for o in optics:
-            all_parts += optic(o)
+            all_parts += refine(optic(o))
         if gid != "sg12":
-            all_parts += suppressor(muzzle)
+            all_parts += refine(suppressor(muzzle))
         uvs, ppu = build_texture(gid, all_parts, spec["mark"])
         tex_ref = "#gun"
         textures = {"gun": f"warfront:item/gun/{gid}", "particle": f"warfront:item/gun/{gid}"}
