@@ -27,9 +27,12 @@ public final class ClientEvents {
     public static void onClientTick(TickEvent.ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         AutoTest.tick(mc);
+        WeaponRangeTest.tick(mc);
         if (mc.player == null || mc.level == null) return;
         ClientState.tick();
         Tracers.tick();
+        com.ditsjohann.warfront.client.render.WeaponEffects.tick();
+        Movement.tick(mc, mc.player);
         GunController.tick();
         while (KeyBinds.RELOAD.consumeClick()) WarfrontNet.toServer(new SimplePackets.Action(SimplePackets.Action.RELOAD));
         while (KeyBinds.FIRE_MODE.consumeClick()) WarfrontNet.toServer(new SimplePackets.Action(SimplePackets.Action.FIRE_MODE));
@@ -48,6 +51,7 @@ public final class ClientEvents {
     @SubscribeEvent
     public static void onRenderTick(TickEvent.RenderTickEvent.Pre event) {
         GunController.applyRecoil(event.getTimer().getRealtimeDeltaTicks());
+        if (Minecraft.getInstance().player != null && !Minecraft.getInstance().isPaused()) Movement.applySway(Minecraft.getInstance().player);
     }
 
     /** Guns and tanks own the mouse buttons: cancel vanilla attack/use while holding one. */
@@ -112,6 +116,7 @@ public final class ClientEvents {
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
             Tracers.render(event);
+            com.ditsjohann.warfront.client.render.WeaponEffects.render(event);
             com.ditsjohann.warfront.client.render.ScopeGlintRenderer.render(event);
         }
     }
@@ -121,6 +126,8 @@ public final class ClientEvents {
         GunController.restoreSensitivity(Minecraft.getInstance());
         ClientState.reset();
         Tracers.clear();
+        com.ditsjohann.warfront.client.render.WeaponEffects.clear();
+        Movement.reset();
     }
 
     @SubscribeEvent

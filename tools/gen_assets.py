@@ -300,6 +300,7 @@ def gen_lang(sound_names):
         "key.warfront.deploy": "Deploy Screen",
         "key.warfront.scoreboard": "Battle Scoreboard",
         "key.warfront.orders": "Squad Orders (hold)",
+        "key.warfront.prone": "Go Prone",
         "item.warfront.frag_grenade": "Frag Grenade",
         "item.warfront.smoke_grenade": "Smoke Grenade",
         "item.warfront.medic_bag": "Medic Bag",
@@ -385,7 +386,7 @@ def gen_data():
 
 
 if __name__ == "__main__":
-    gen_guns()
+    # gun models now come from tools/gen_guns.py
     gen_items()
     gen_blocks()
     names = gen_sounds()

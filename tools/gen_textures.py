@@ -617,7 +617,51 @@ def gen_misc():
     save(img, "particle", "smoke_puff.png")
 
 
+def gen_arms():
+    """First-person arms: faction camo sleeves (rows 0-15) + tactical gloves (rows 16-31)."""
+    img = Image.new("RGBA", (64, 32))
+    px = img.load()
+    for fi, (fac, spec) in enumerate(FACTIONS.items()):
+        camo = camo_fn(spec["camo"], 99 + fi)
+        x0 = fi * 32
+        for y in range(16):
+            for x in range(32):
+                c = camo(x * 2 + fi * 40, y * 2)
+                if y in (2, 3):
+                    c = spec["team"]  # armband
+                if y >= 13:
+                    c = shade(spec["camo"][3], 0.8)  # rolled cuff
+                if x % 8 == 0:
+                    c = shade(c, 0.88)  # fabric seams
+                px[x0 + x, y] = c
+    for y in range(16, 32):
+        for x in range(64):
+            c = jitter(hexc("#26272a"), 6)
+            if (y - 16) % 5 == 0:
+                c = shade(c, 0.75)  # finger seams
+            if x % 16 in (3, 4) and y < 22:
+                c = jitter(hexc("#3d3f44"), 5)  # knuckle pads
+            if y > 29:
+                c = jitter(hexc("#5a5040"), 6)  # wrist strap
+            px[x, y] = c
+    save(img, "entity", "arms.png")
+    # bullet hole decal
+    hole = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    hp = hole.load()
+    for y in range(16):
+        for x in range(16):
+            d = ((x - 7.5) ** 2 + (y - 7.5) ** 2) ** 0.5
+            if d < 2.2:
+                hp[x, y] = (12, 10, 9, 255)
+            elif d < 4.2:
+                hp[x, y] = (40, 34, 30, clamp(220 - d * 30))
+            elif d < 6.5 and R.random() < 0.35:
+                hp[x, y] = (60, 52, 44, 120)
+    save(hole, "entity", "bullet_hole.png")
+
+
 if __name__ == "__main__":
+    gen_arms()
     gen_parts()
     for fac in FACTIONS:
         for role in ROLES:

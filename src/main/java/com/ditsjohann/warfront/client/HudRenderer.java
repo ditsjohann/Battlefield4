@@ -44,7 +44,15 @@ public final class HudRenderer {
         int w = g.guiWidth(), h = g.guiHeight();
         RenderSystem.enableBlend();
 
-        if (FirstPersonGun.scoped()) drawScope(g, w, h);
+        if (FirstPersonGun.scoped()) {
+            drawScope(g, w, h);
+            // breath meter (hold sprint to steady the scope)
+            int bw = 80, bx = w / 2 - bw / 2, by = h / 2 + 38;
+            g.fill(bx - 1, by - 1, bx + bw + 1, by + 4, 0x88000000);
+            g.fill(bx, by, bx + Math.round(bw * Movement.breath), by + 3, Movement.holdingBreath ? 0xFF9FD8FF : 0xAAE0E0E0);
+            String hint = Movement.holdingBreath ? "HOLDING BREATH" : "[" + Minecraft.getInstance().options.keySprint.getTranslatedKeyMessage().getString() + "] HOLD BREATH";
+            g.drawString(Minecraft.getInstance().font, hint, w / 2 - Minecraft.getInstance().font.width(hint) / 2, by + 6, 0xAAE0E0E0, true);
+        }
         drawVignettes(g, p, w, h);
         boolean match = ClientState.match.active();
         if (match) {
@@ -71,8 +79,9 @@ public final class HudRenderer {
         ItemStack stack = p.getMainHandItem();
         int cx = w / 2, cy = h / 2;
         boolean gun = stack.getItem() instanceof GunItem;
-        // panel bottom-right
-        int pw = 132, ph = 46, px = w - pw - 8, py = h - ph - 8;
+        // panel bottom-right; on narrow screens lift it above the hotbar and survival bars
+        int pw = 132, ph = 52, px = w - pw - 8, py = h - ph - 8;
+        if (px < w / 2 + 91 + 6) py = h - 62 - ph;
         if (gun) {
             GunItem gi = (GunItem) stack.getItem();
             GunType type = gi.type;
@@ -84,20 +93,20 @@ public final class HudRenderer {
             boolean low = ammo <= type.stats.magSize / 4;
             String mag = String.valueOf(ammo);
             g.pose().pushPose();
-            g.pose().translate(px + 6, py + 16, 0);
-            g.pose().scale(2.2f, 2.2f, 1);
+            g.pose().translate(px + 6, py + 15, 0);
+            g.pose().scale(2.0f, 2.0f, 1);
             g.drawString(font, mag, 0, 0, low ? 0xFFFF5040 : WHITE, true);
             g.pose().popPose();
             String res = p.getAbilities().instabuild ? "/ ∞" : "/ " + reserve;
-            g.drawString(font, res, px + 8 + Math.round(font.width(mag) * 2.2f), py + 28, DIM, true);
+            g.drawString(font, res, px + 8 + Math.round(font.width(mag) * 2.0f), py + 23, DIM, true);
             FireMode mode = GunLogic.fireMode(stack, type);
             g.drawString(font, mode.label, px + pw - 6 - font.width(mode.label), py + 5, ACCENT, false);
             // ammo pips
-            int pips = Math.min(type.stats.magSize, 30);
+            int pips = Math.min(type.stats.magSize, 20);
             int filled = Math.round((float) ammo / type.stats.magSize * pips);
             for (int i = 0; i < pips; i++) {
                 int x = px + pw - 6 - (pips - i) * 3;
-                g.fill(x, py + 18, x + 2, py + 26, i < filled ? 0xFFE8E8E8 : 0x44FFFFFF);
+                g.fill(x, py + 15, x + 2, py + 21, i < filled ? 0xFFE8E8E8 : 0x44FFFFFF);
             }
             Long end = stack.get(ModComponents.RELOAD_END.get());
             if (end != null) {
@@ -112,7 +121,7 @@ public final class HudRenderer {
                 g.drawString(font, r, cx - font.width(r) / 2, cy + 22, 0xFFFF5040, true);
             }
             String att = eff.loadout().optic().label + (eff.suppressed() ? " | SUPPRESSED" : "");
-            g.drawString(font, att, px + 6, py + ph - 16, 0xFF7FA8C0, false);
+            g.drawString(font, att, px + 6, py + 36, 0xFF7FA8C0, false);
             if (!FirstPersonGun.scoped()) drawCrosshair(g, p, eff, cx, cy);
         } else if (stack.getItem() instanceof GadgetItem gadget) {
             panel(g, px, py + 18, pw, ph - 18);
@@ -126,16 +135,6 @@ public final class HudRenderer {
                 g.fill(px + 6, py + 36, px + pw - 6, py + 39, 0x55FFFFFF);
                 g.fill(px + 6, py + 36, px + 6 + Math.round((pw - 12) * heat / 100f), py + 39, heat > 80 ? 0xFFFF4020 : 0xFFFFA040);
             }
-        }
-        // health
-        if (ClientState.inMatch() || gun) {
-            int hx = w - 140 - 8, hy = h - 8 - 46 - 14;
-            float hp = p.getHealth() / p.getMaxHealth();
-            g.fill(hx + 8, hy, hx + 140, hy + 9, PANEL);
-            int col = hp > 0.5f ? 0xFFE8E8E8 : hp > 0.25f ? 0xFFF2C23A : 0xFFFF4A3A;
-            g.fill(hx + 9, hy + 1, hx + 9 + Math.round(130 * hp), hy + 8, col);
-            String hs = String.valueOf(Math.round(hp * 100));
-            g.drawString(font, hs, hx - font.width(hs) + 4, hy + 1, col, true);
         }
         drawHitMarker(g, cx, cy);
     }

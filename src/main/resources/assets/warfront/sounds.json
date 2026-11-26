@@ -15,6 +15,22 @@
     ],
     "subtitle": "subtitles.warfront.bag_drop"
   },
+  "breath_in": {
+    "sounds": [
+      {
+        "name": "warfront:breath_in"
+      }
+    ],
+    "subtitle": "subtitles.warfront.breath_in"
+  },
+  "breath_out": {
+    "sounds": [
+      {
+        "name": "warfront:breath_out"
+      }
+    ],
+    "subtitle": "subtitles.warfront.breath_out"
+  },
   "bullet_crack": {
     "sounds": [
       {
@@ -89,6 +105,20 @@
       }
     ],
     "subtitle": "subtitles.warfront.carbine_shot_far"
+  },
+  "casing": {
+    "sounds": [
+      {
+        "name": "warfront:casing"
+      },
+      {
+        "name": "warfront:casing_v2"
+      },
+      {
+        "name": "warfront:casing_v3"
+      }
+    ],
+    "subtitle": "subtitles.warfront.casing"
   },
   "defeat": {
     "sounds": [

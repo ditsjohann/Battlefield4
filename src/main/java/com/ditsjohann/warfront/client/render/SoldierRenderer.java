@@ -22,6 +22,7 @@ public class SoldierRenderer extends HumanoidMobRenderer<SoldierEntity, PlayerMo
 
     public SoldierRenderer(EntityRendererProvider.Context ctx) {
         super(ctx, new PlayerModel<>(ctx.bakeLayer(LAYER), false), 0.5f);
+        addLayer(new GearLayer<>(this));
     }
 
     public static LayerDefinition createLayer() {

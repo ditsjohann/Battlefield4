@@ -234,6 +234,16 @@ def gen_feedback():
         write(f"bullet_crack_v{v}", pad(mix(highpass_fast(noise(0.012), 3000) * env_exp(0.012, 0.002) * 2, whiz * 0.7), 0.3))
         write(f"bullet_impact_v{v}", pad(mix(bandpass_fast(noise(0.12), 600 + v * 200, 5000 + v * 500) * env_exp(0.12, 0.012 + v * 0.003),
                                              lowpass_fast(noise(0.1), 450) * env_exp(0.1, 0.02) * 0.6), 0.15))
+    # spent casing hitting the ground: bright brass tink
+    for v, f0 in ((1, 4200), (2, 3700), (3, 4800)):
+        t2 = mix(sine(f0, 0.18) * env_exp(0.18, 0.03) * 0.5, sine(f0 * 1.52, 0.12) * env_exp(0.12, 0.02) * 0.3,
+                 shift(sine(f0 * 0.9, 0.1) * env_exp(0.1, 0.02) * 0.25, 0.05))
+        write("casing" if v == 1 else f"casing_v{v}", pad(t2, 0.22))
+    # breathing: held breath (sharp inhale) and the release
+    inh = bandpass_fast(noise(0.45), 500, 3800) * np.concatenate([np.linspace(0, 1, int(SR * 0.3)), np.linspace(1, 0, int(SR * 0.45) - int(SR * 0.3))]) * 0.35
+    write("breath_in", pad(inh, 0.5), peak=0.5)
+    exh = bandpass_fast(noise(0.7), 300, 2400) * env_exp(0.7, 0.25, attack=0.04) * 0.4
+    write("breath_out", pad(exh, 0.75), peak=0.55)
     # magazine running dry: light rattle of the last rounds
     rattle = np.zeros(int(SR * 0.12))
     for k in range(4):

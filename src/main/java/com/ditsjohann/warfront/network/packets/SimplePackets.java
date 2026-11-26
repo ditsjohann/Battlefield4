@@ -17,7 +17,7 @@ public final class SimplePackets {
 
     /** 0 = reload, 1 = cycle fire mode, 2 = spot, 3 = bleed out, 4 = open deploy, 5 = aim on, 6 = aim off. */
     public record Action(int action) {
-        public static final int RELOAD = 0, FIRE_MODE = 1, SPOT = 2, BLEED_OUT = 3, OPEN_DEPLOY = 4, AIM_ON = 5, AIM_OFF = 6;
+        public static final int RELOAD = 0, FIRE_MODE = 1, SPOT = 2, BLEED_OUT = 3, OPEN_DEPLOY = 4, AIM_ON = 5, AIM_OFF = 6, PRONE_ON = 7, PRONE_OFF = 8;
         public static final StreamCodec<FriendlyByteBuf, Action> CODEC = StreamCodec.of(
                 (b, p) -> b.writeVarInt(p.action), b -> new Action(b.readVarInt()));
     }

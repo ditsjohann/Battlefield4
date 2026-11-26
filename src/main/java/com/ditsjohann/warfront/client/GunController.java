@@ -25,7 +25,12 @@ public final class GunController {
     public static float bloom;
     public static float kick, kickPrev;
     public static int muzzleFlash;
-    public static int boltTimer;
+    public static int boltTimer, pumpTimer;
+    /** Random per-shot roll (degrees) applied with the visual kick. */
+    public static float lastShotRoll;
+    /** Pitch the recoil has climbed during the current string of fire; half is recovered afterwards. */
+    private static float climbed;
+    private static boolean autoReloadSent;
     private static float cooldown;
     private static int burstLeft;
     private static boolean triggerWasDown, useWasDown;
@@ -49,7 +54,8 @@ public final class GunController {
         float base = Mth.lerp(ease(ads), eff.hipSpread(), eff.adsSpread());
         double horiz = p.getDeltaMovement().horizontalDistance();
         if (horiz > 0.03) base *= s.moveMult;
-        if (p.isCrouching()) base *= 0.75f;
+        if (Movement.isProne(p)) base *= 0.5f;
+        else if (p.isCrouching()) base *= 0.75f;
         if (!p.onGround() && p.getVehicle() == null) base *= 2.5f;
         base += bloom * (ads > 0.5f ? 0.6f : 1f);
         base *= 1 + ClientState.suppression * 1.2f;
@@ -66,10 +72,15 @@ public final class GunController {
         if (p == null) return;
         adsPrev = ads;
         kickPrev = kick;
-        kick *= 0.55f;
+        kick *= 0.62f;
         if (muzzleFlash > 0) muzzleFlash--;
+        if (pumpTimer > 0) {
+            pumpTimer--;
+            if (pumpTimer == 6) com.ditsjohann.warfront.client.render.WeaponEffects.ejectLocal(true, ads > 0.5f);
+        }
         if (boltTimer > 0) {
             boltTimer--;
+            if (boltTimer == 11) com.ditsjohann.warfront.client.render.WeaponEffects.ejectLocal(false, ads > 0.5f);
             if (boltTimer == 12) p.playSound(ModSounds.get("reload_bolt"), 0.6f, 1.1f);
         }
         handleDowned(mc, p);
@@ -123,6 +134,19 @@ public final class GunController {
         triggerWasDown = trigger;
         if (reloading) {
             burstLeft = 0;
+            autoReloadSent = false;
+            return;
+        }
+        // BF4 behaviour: running dry starts the reload on its own once the trigger is released or after a beat
+        long nowT = p.level().getGameTime();
+        if (clientAmmo == 0 && GunLogic.reserve(stack) > 0 && !autoReloadSent && nowT - lastShotTick >= 4 && (!trigger || nowT - lastShotTick >= 8)) {
+            autoReloadSent = true;
+            WarfrontNet.toServer(new SimplePackets.Action(SimplePackets.Action.RELOAD));
+            return;
+        }
+        if (clientAmmo > 0) autoReloadSent = false;
+        if (pressed && clientAmmo <= 0 && (autoReloadSent || GunLogic.reserve(stack) <= 0)) {
+            p.playSound(ModSounds.get("dry_fire"), 0.6f, 1f);
             return;
         }
         if (pressed && clientAmmo <= 0) {
@@ -177,20 +201,35 @@ public final class GunController {
         boolean first = now - lastShotTick > 6;
         float up = eff.recoilUp() * (0.9f + RNG.nextFloat() * 0.1f) * (first ? eff.firstShotMult() : 1f);
         float side = (RNG.nextFloat() * 2 - 1) * eff.recoilSide();
-        float mult = 1f;
-        if (p.isCrouching()) mult *= eff.bipod() ? 0.3f : 0.85f;
+        float mult = 0.72f;
+        if (Movement.isProne(p)) mult *= eff.bipod() ? 0.25f : 0.6f;
+        else if (p.isCrouching()) mult *= eff.bipod() ? 0.3f : 0.85f;
         if (ads < 0.5f) mult *= 1.15f;
         pendingPitch += up * mult;
+        climbed += up * mult;
+        lastShotRoll = (RNG.nextFloat() * 2 - 1) * (type.category == WeaponCategory.PISTOL ? 4f : 2.5f);
+        if (mode != FireMode.BOLT && type != GunType.SG12) com.ditsjohann.warfront.client.render.WeaponEffects.ejectLocal(false, ads > 0.5f);
         pendingYaw += side * mult;
         bloom = Math.min(type.stats.spreadMax, bloom + type.stats.spreadPerShot);
         lastShotTick = now;
         if (mode == FireMode.BOLT) boltTimer = 20;
+        if (type == GunType.SG12) pumpTimer = 12;
     }
 
     /** Applies pending recoil smoothly over a few frames. Called every render frame. */
     public static void applyRecoil(float frameTicks) {
         LocalPlayer p = Minecraft.getInstance().player;
         if (p == null) return;
+        long since = p.level().getGameTime() - lastShotTick;
+        if (since > 3 && climbed > 0.01f && Math.abs(pendingPitch) < 0.05f) {
+            // recover about half of the climb, eased, once the string of fire ends
+            float target = climbed * 0.5f;
+            float step = Math.min(target, Math.max(0.02f, target * 0.18f * Math.max(0.2f, frameTicks) * 3f));
+            p.turn(0, step / 0.15);
+            climbed -= step * 2f;
+            if (climbed < 0.01f) climbed = 0;
+        }
+        if (since > 40) climbed = 0;
         if (Math.abs(pendingPitch) < 0.002f && Math.abs(pendingYaw) < 0.002f) {
             pendingPitch = pendingYaw = 0;
             return;

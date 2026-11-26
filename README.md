@@ -12,6 +12,17 @@ Inspired by the design of Battlefield 4. All names, models, textures and sounds 
 (generated procedurally by the scripts in `tools/`).
 
 ## Features
+- **BF4-style weapon feel** (v0.3.0): high-detail gun models (40-50 modelled parts each, painted
+  256x256 textures with rails, vents, stippling and stamped markings); first-person arms in your
+  faction's uniform and gloves; walk-cycle, breathing, turn sway, sprint carry and jump/land
+  motion; real magazine-swap reloads (old mag drops, new one comes from the pouch, charging handle
+  on empty), bolt cycling, shotgun pumping and shell loading; kick, climb and roll recoil with
+  recovery; ejected brass that bounces and clinks, bullet-hole decals and debris, other shooters'
+  muzzle flashes, barrel smoke after long bursts; auto-reload when you run dry.
+- **Movement**: go prone (X) for tighter spread and recoil, mantle onto 2-high ledges, and scope
+  sway on magnified optics. Hold sprint while scoped to hold your breath.
+- **Soldier gear**: helmets with goggles, plate carriers with mag pouches, knee pads and
+  role-specific kit (medic bag, slung launcher, ammo can, radio) on AI and on players in a match.
 - **Ballistic gunplay**: 8 weapons with real bullet travel and drop, spread bloom, first-shot
   recoil, damage falloff, headshots, wall penetration, glass shattering, suppression and tracers.
 - **Attachments**: reflex, holo, 4x and 8x optics; suppressor, compensator, heavy barrel; grips
@@ -45,6 +56,8 @@ Inspired by the design of Battlefield 4. All names, models, textures and sounds 
 | Fire mode | B |
 | Spot enemy / order squad to the flag you look at | Z |
 | Squad orders radial (hold) | V |
+| Prone (toggle) / mantle | X / Space into a ledge |
+| Hold breath (while scoped) | Sprint key |
 | Deploy screen (at HQ or when dead) | J |
 | Battle scoreboard | Tab |
 | Give up while downed | hold Space |

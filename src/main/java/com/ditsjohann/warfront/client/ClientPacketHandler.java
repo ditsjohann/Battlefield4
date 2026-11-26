@@ -14,6 +14,9 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 public final class ClientPacketHandler {
     public static void tracer(TracerPacket p) {
         Tracers.add(p.origin(), p.velocity(), p.gravity(), p.color());
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null && p.shooterId() != mc.player.getId())
+            com.ditsjohann.warfront.client.render.WeaponEffects.remoteShot(p.origin(), p.velocity(), p.suppressed());
         if (!p.suppressed() && p.shooterId() >= 0) ClientState.REVEALED.put(p.shooterId(), ClientState.now());
     }
 

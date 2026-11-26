@@ -45,7 +45,7 @@ import java.util.function.Consumer;
  * collapse, logs battle telemetry and saves screenshots, then quits.
  */
 public final class AutoTest {
-    public static final boolean ENABLED = System.getenv("WARFRONT_AUTOTEST") != null;
+    public static final boolean ENABLED = System.getenv("WARFRONT_AUTOTEST") != null && !"range".equals(System.getenv("WARFRONT_AUTOTEST"));
     private static int stage;
     private static int wait;
     private static int shots;

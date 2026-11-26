@@ -118,6 +118,44 @@ Key decisions (with reasoning in `RESEARCH.md` §3):
 - **Sound pass:** three variants of every gunshot (near and far), bullet crack, impact and
   explosion; a low-ammo magazine rattle.
 
+### Done (third wave, v0.3.0: weapon repair and immersion)
+- **Gun models rebuilt** by `tools/gen_guns.py`. Each gun is 40-55 named parts in groups
+  (body / mag / optic / suppressor / muzzle / irons) with per-gun 256x256 painted textures:
+  materials (receiver, blued, polymer, tan, coyote, wood, OD, rubber, glass, brass) plus detail
+  passes (rails, vents, grip texture, flutes, ports, serrations, stippling, lens glare, stamped
+  markings). Variants exist per optic × suppressor × with/without magazine, plus a standalone
+  magazine model (`item/gun/<id>_mag`) for reloads.
+- **Fixed:** third-person guns pointed upward (bad display rotation). They are now held level at
+  the hand grip. Inventory icons are larger. The ammo panel no longer collides with the hotbar or
+  hunger bar, its text no longer overlaps, and the duplicate health bar is gone.
+- **Fixed:** recoil was too strong and never recovered. It is now about 0.72x, and about half the
+  climb recovers after a burst. Running dry triggers the reload automatically, and the dry-fire
+  click no longer spams reload requests.
+- **First-person rewrite** (`FirstPersonGun`, `ArmRenderer`):
+  - Faction sleeves with armband and gloves, with hands solved to the grip and handguard.
+  - Spring turn sway, walk figure-eight, breathing, sprint carry, jump/land.
+  - Recoil kick, climb and random roll.
+  - Keyframed reloads: tilt, mag out and drop, new mag up from the pouch, seat, charging handle
+    on empty. Pistol mags drop from the grip.
+  - Bolt cycle with the hand on the bolt, shotgun pump and shell feeding, muzzle flash.
+- **World effects** (`WeaponEffects`):
+  - Brass and shotgun shells that tumble, bounce and clink.
+  - Bullet-hole decals that fade after a minute, plus block chips and dust.
+  - Muzzle flashes, smoke and brass for other shooters.
+  - Barrel smoke after sustained fire.
+- **Movement** (`Movement`):
+  - Prone toggle on X, mirrored to the server as a forced swimming pose, so the hitbox and eye
+    height are real. It halves spread and cuts recoil.
+  - Mantling onto 2-high ledges.
+  - Scope sway (steadier crouched or prone), hold breath on the sprint key with a breath meter,
+    and a shaky recovery when breath runs out.
+- **Soldier gear layer** (`GearLayer`) on AI soldiers and on in-match players: helmet with
+  goggles, NVG mount and ear protection (boonie and headset for recon), plate carrier, mag
+  pouches, belt, knee pads, and role packs (medic bag, slung launcher, ammo can, radio and whip).
+- `WARFRONT_AUTOTEST=range`: weapon range harness. Per gun it captures hip, ADS, firing,
+  mid-reload, sprint and third-person shots, plus prone and a gear line-up, and logs magazine,
+  reserve, damage, reload and fire-mode bookkeeping. Every gun passes.
+
 ### Testing (verified 2026-11-26)
 - **Dedicated server:** Forge's `server_gametest` launch target runs as `Dist.DEDICATED_SERVER`
   (client classes stripped), so the GameTest suite also proves the mod loads and runs on the
@@ -139,7 +177,10 @@ Key decisions (with reasoning in `RESEARCH.md` §3):
   revive-goal NPE, bullet penetration re-hitting the same block, oversized head hitbox.
 
 ## Known issues / limitations
-- First-person arm placement is approximated (procedural, no keyframes).
+- First-person arms are procedural boxes solved to hand targets, with no elbow IK. Reload hand
+  paths are keyframed per weapon family, not per gun.
+- Gun models are generated, not hand-modelled in Blockbench. The Blockbench MCP isn't reachable
+  from the cloud build session, so `tools/gen_guns.py` is the source of truth.
 - AI pathfinding can't plan through blocks it would need to break; soldiers sometimes bunch on
   steep terrain. Waypointing mitigates long routes.
 - Tank movement is arcade kinematics; no slope tilt of the hull.
@@ -157,7 +198,8 @@ Key decisions (with reasoning in `RESEARCH.md` §3):
 3. Helicopter or attack drone as the first air asset, plus AA for engineers.
 4. Squad play for multiple human players (shared squads, squad spawn, squad leader score).
 5. Commander role: UAV scan and supply drop on a cooldown, earned by holding flags.
-6. Animated first-person reloads (magazine swap via arm keyframes).
+6. Per-gun reload timing tuned against the sound cues, and an elbow IK pass for the arms.
+7. Third-person reload and prone-aim poses on the player model.
 
 ## Development environment notes
 - ForgeGradle 7's Mavenizer runs tools on **JDK 25** and **JDK 8**. On machines without internet

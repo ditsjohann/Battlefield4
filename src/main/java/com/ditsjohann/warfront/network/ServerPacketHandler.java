@@ -62,6 +62,10 @@ public final class ServerPacketHandler {
             }
             case SimplePackets.Action.AIM_ON -> com.ditsjohann.warfront.combat.ScopeGlint.aim(p, true);
             case SimplePackets.Action.AIM_OFF -> com.ditsjohann.warfront.combat.ScopeGlint.aim(p, false);
+            case SimplePackets.Action.PRONE_ON -> {
+                if (!p.isPassenger() && !p.isInWater()) p.setForcedPose(net.minecraft.world.entity.Pose.SWIMMING);
+            }
+            case SimplePackets.Action.PRONE_OFF -> p.setForcedPose(null);
             default -> {}
         }
     }

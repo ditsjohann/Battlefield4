@@ -29,10 +29,18 @@ public final class WarfrontClient {
             for (GunType t : GunType.values()) {
                 ItemProperties.register(ModItems.gun(t), Warfront.id("optic"),
                         (stack, level, entity, seed) -> GunLogic.loadout(stack, t).optic().ordinal() / 10f);
+                ItemProperties.register(ModItems.gun(t), Warfront.id("nomag"),
+                        (stack, level, entity, seed) -> com.ditsjohann.warfront.client.render.FirstPersonGun.renderingMagless ? 1f : 0f);
                 ItemProperties.register(ModItems.gun(t), Warfront.id("suppressed"),
                         (stack, level, entity, seed) -> GunLogic.loadout(stack, t).suppressed() ? 1f : 0f);
             }
         });
+    }
+
+    @SubscribeEvent
+    public static void registerModels(net.minecraftforge.client.event.ModelEvent.RegisterAdditional event) {
+        for (com.ditsjohann.warfront.weapon.GunType t : com.ditsjohann.warfront.weapon.GunType.values())
+            event.register(com.ditsjohann.warfront.client.render.FirstPersonGun.magModel(t));
     }
 
     @SubscribeEvent
@@ -43,6 +51,7 @@ public final class WarfrontClient {
         event.register(KeyBinds.DEPLOY);
         event.register(KeyBinds.SCOREBOARD);
         event.register(KeyBinds.ORDERS);
+        event.register(KeyBinds.PRONE);
     }
 
     @SubscribeEvent
@@ -57,6 +66,14 @@ public final class WarfrontClient {
         event.registerEntityRenderer(ModEntities.SPAWN_BEACON.get(), GadgetRenderers.Beacon::new);
         event.registerBlockEntityRenderer(ModBlockEntities.CAPTURE_POINT.get(), FlagRenderers.CapturePoint::new);
         event.registerBlockEntityRenderer(ModBlockEntities.HQ_BEACON.get(), FlagRenderers.Hq::new);
+    }
+
+    @SubscribeEvent
+    public static void addPlayerLayers(EntityRenderersEvent.AddLayers event) {
+        for (net.minecraft.client.resources.PlayerSkin.Model skin : event.getSkins()) {
+            if ((Object) event.getPlayerSkin(skin) instanceof net.minecraft.client.renderer.entity.player.PlayerRenderer pr)
+                pr.addLayer(new com.ditsjohann.warfront.client.render.GearLayer<>(pr));
+        }
     }
 
     @SubscribeEvent

@@ -67,6 +67,7 @@ public final class Tracers {
             if (hit.getType() == HitResult.Type.BLOCK) {
                 t.pos = hit.getLocation();
                 t.dead = true;
+                WeaponEffects.impact(hit, t.vel);
             } else {
                 t.pos = next;
             }

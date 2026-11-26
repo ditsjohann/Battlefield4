@@ -1,0 +1,225 @@
+{
+ "textures": {
+  "gun": "warfront:item/gun/p12",
+  "particle": "warfront:item/gun/p12"
+ },
+ "elements": [
+  {
+   "from": [
+    7.64,
+    5.12,
+    9.14
+   ],
+   "to": [
+    8.36,
+    5.72,
+    10.34
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      12.5,
+      4.4375,
+      13.0,
+      4.8125
+     ],
+     "texture": "#gun"
+    },
+    "south": {
+     "uv": [
+      13.0625,
+      4.4375,
+      13.5625,
+      4.8125
+     ],
+     "texture": "#gun"
+    },
+    "east": {
+     "uv": [
+      10.875,
+      4.4375,
+      11.625,
+      4.8125
+     ],
+     "texture": "#gun"
+    },
+    "west": {
+     "uv": [
+      11.6875,
+      4.4375,
+      12.4375,
+      4.8125
+     ],
+     "texture": "#gun"
+    },
+    "up": {
+     "uv": [
+      14.0,
+      3.625,
+      14.5,
+      4.375
+     ],
+     "texture": "#gun"
+    },
+    "down": {
+     "uv": [
+      14.5625,
+      3.625,
+      15.0625,
+      4.375
+     ],
+     "texture": "#gun"
+    }
+   },
+   "rotation": {
+    "angle": -22.5,
+    "axis": "x",
+    "origin": [
+     8.0,
+     8.0,
+     9.8
+    ]
+   },
+   "name": "mag_base"
+  }
+ ],
+ "display": {
+  "firstperson_righthand": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.75,
+    0.75,
+    0.75
+   ]
+  },
+  "firstperson_lefthand": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.75,
+    0.75,
+    0.75
+   ]
+  },
+  "thirdperson_righthand": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    0.825,
+    -1.43
+   ],
+   "scale": [
+    0.9167,
+    0.9167,
+    0.9167
+   ]
+  },
+  "thirdperson_lefthand": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    0.825,
+    -1.43
+   ],
+   "scale": [
+    0.9167,
+    0.9167,
+    0.9167
+   ]
+  },
+  "gui": {
+   "rotation": [
+    0,
+    -90,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    1.05,
+    1.05,
+    1.05
+   ]
+  },
+  "ground": {
+   "rotation": [
+    0,
+    90,
+    0
+   ],
+   "translation": [
+    0,
+    2,
+    0
+   ],
+   "scale": [
+    0.6667,
+    0.6667,
+    0.6667
+   ]
+  },
+  "fixed": {
+   "rotation": [
+    0,
+    -90,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  "head": {
+   "rotation": [
+    0,
+    90,
+    0
+   ],
+   "translation": [
+    0,
+    6,
+    0
+   ],
+   "scale": [
+    1.3333,
+    1.3333,
+    1.3333
+   ]
+  }
+ },
+ "gui_light": "front"
+}

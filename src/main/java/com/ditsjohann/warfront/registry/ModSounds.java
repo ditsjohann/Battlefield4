@@ -22,7 +22,7 @@ public final class ModSounds {
             "hitmarker", "headshot", "kill_confirm", "bullet_crack", "bullet_impact", "ricochet", "glass_shatter",
             "score_ping", "flag_captured", "flag_lost", "capture_tick", "ticket_warning", "deploy", "spot",
             "victory", "defeat", "explosion", "explosion_far", "grenade_explode", "tank_cannon", "rocket_launch",
-            "rocket_loop", "tower_alarm", "tower_collapse", "tank_engine", "turret_traverse", "vehicle_hit", "vehicle_warning", "ammo_low"
+            "rocket_loop", "tower_alarm", "tower_collapse", "tank_engine", "turret_traverse", "vehicle_hit", "vehicle_warning", "ammo_low", "casing", "breath_in", "breath_out"
     };
 
     static {
