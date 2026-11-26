@@ -1,7 +1,7 @@
 package com.ditsjohann.warfront.client;
 
 import com.ditsjohann.warfront.client.render.Tracers;
-import com.ditsjohann.warfront.entity.TankEntity;
+import com.ditsjohann.warfront.entity.VehicleEntity;
 import com.ditsjohann.warfront.network.WarfrontNet;
 import com.ditsjohann.warfront.network.packets.SimplePackets;
 import com.ditsjohann.warfront.registry.ModItems;
@@ -168,6 +168,9 @@ public final class GunController {
             Vec3 origin = eye.add(look.scale(0.9)).add(right.scale(ads > 0.5f ? 0.0 : 0.18)).add(0, ads > 0.5f ? -0.08 : -0.16, 0);
             Tracers.add(origin, d.scale(eff.velocity()), type.stats.gravity, type.stats.tracerColor);
         }
+        if (clientAmmo <= type.stats.magSize / 4 && clientAmmo >= 0) {
+            p.level().playLocalSound(p.getX(), p.getEyeY(), p.getZ(), ModSounds.get("ammo_low"), SoundSource.PLAYERS, 0.5f, 1f + RNG.nextFloat() * 0.1f, false);
+        }
         muzzleFlash = eff.suppressed() ? 0 : 2;
         kick = 1f;
         // ---- recoil
@@ -239,12 +242,15 @@ public final class GunController {
         return Math.min(1f, giveUpHold / 30f);
     }
 
-    /** Tank controls. Returns true when the player is driving (gun handling suspended). */
+    /**
+     * Vehicle controls for drivers and gunners. Returns true when the player's mouse buttons belong
+     * to the vehicle (personal weapon handling suspended). Deck riders keep their own guns.
+     */
     private static boolean handleVehicle(Minecraft mc, LocalPlayer p) {
-        boolean inTank = p.getVehicle() instanceof TankEntity t && t.getControllingPassenger() == p;
-        if (inTank != wasInTank) {
-            wasInTank = inTank;
-            if (inTank) {
+        boolean crew = p.getVehicle() instanceof VehicleEntity v && v.usesVehicleControls(p);
+        if (crew != wasInTank) {
+            wasInTank = crew;
+            if (crew) {
                 cameraBeforeTank = mc.options.getCameraType();
                 mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
             } else if (cameraBeforeTank != null) {
@@ -252,12 +258,13 @@ public final class GunController {
                 cameraBeforeTank = null;
             }
         }
-        if (!inTank) return false;
+        if (!crew) return false;
         boolean canAct = mc.screen == null;
         boolean attack = canAct && mc.options.keyAttack.isDown();
         boolean use = canAct && mc.options.keyUse.isDown();
-        if (attack && !triggerWasDown) WarfrontNet.toServer(new SimplePackets.VehicleInput(0));
-        if (use != useWasDown) WarfrontNet.toServer(new SimplePackets.VehicleInput(use ? 1 : 2));
+        if (attack && !triggerWasDown) WarfrontNet.toServer(new SimplePackets.VehicleInput(VehicleEntity.IN_ATTACK_PRESS));
+        if (attack != triggerWasDown) WarfrontNet.toServer(new SimplePackets.VehicleInput(attack ? VehicleEntity.IN_ATTACK_ON : VehicleEntity.IN_ATTACK_OFF));
+        if (use != useWasDown) WarfrontNet.toServer(new SimplePackets.VehicleInput(use ? VehicleEntity.IN_USE_ON : VehicleEntity.IN_USE_OFF));
         triggerWasDown = attack;
         useWasDown = use;
         ads = Math.max(0, ads - 0.25f);
@@ -272,7 +279,7 @@ public final class GunController {
 
     public static boolean drivingTank() {
         LocalPlayer p = Minecraft.getInstance().player;
-        return p != null && p.getVehicle() instanceof TankEntity t && t.getControllingPassenger() == p;
+        return p != null && p.getVehicle() instanceof VehicleEntity v && v.usesVehicleControls(p);
     }
 
     private GunController() {}

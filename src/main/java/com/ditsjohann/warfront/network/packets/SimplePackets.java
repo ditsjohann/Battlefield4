@@ -56,6 +56,13 @@ public final class SimplePackets {
                 (b, p) -> b.writeVarInt(p.action), b -> new VehicleInput(b.readVarInt()));
     }
 
+    /** Commo-rose order: 0 attack/defend flag (arg = index), 1 follow me, 2 hold here, 3 need medic, 4 need ammo. */
+    public record SquadCommand(int command, int arg) {
+        public static final int FLAG = 0, FOLLOW = 1, HOLD = 2, MEDIC = 3, AMMO = 4;
+        public static final StreamCodec<FriendlyByteBuf, SquadCommand> CODEC = StreamCodec.of(
+                (b, p) -> { b.writeVarInt(p.command); b.writeVarInt(p.arg); }, b -> new SquadCommand(b.readVarInt(), b.readVarInt()));
+    }
+
     // ---------------------------------------------------------------- server -> client
     /** Hit confirmation for the shooter. flags: 1 hit, 2 headshot, 4 kill, 8 vehicle. */
     public record HitMarker(int flags, float damage) {
@@ -100,8 +107,8 @@ public final class SimplePackets {
                 (b, p) -> b.writeBlockPos(p.pos), b -> new OpenWarTable(b.readBlockPos()));
     }
 
-    /** Player progression snapshot. */
-    public record Progress(int xp, int rank, int kills, int deaths, int wins, int matches) {
+    /** Player progression snapshot, including kills per weapon (attachment unlocks). */
+    public record Progress(int xp, int rank, int kills, int deaths, int wins, int matches, java.util.Map<String, Integer> weaponKills) {
         public static final StreamCodec<FriendlyByteBuf, Progress> CODEC = StreamCodec.of(
                 (b, p) -> {
                     b.writeVarInt(p.xp);
@@ -110,8 +117,23 @@ public final class SimplePackets {
                     b.writeVarInt(p.deaths);
                     b.writeVarInt(p.wins);
                     b.writeVarInt(p.matches);
+                    b.writeVarInt(p.weaponKills.size());
+                    p.weaponKills.forEach((k, v) -> {
+                        b.writeUtf(k);
+                        b.writeVarInt(v);
+                    });
                 },
-                b -> new Progress(b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt()));
+                b -> {
+                    int xp = b.readVarInt(), rank = b.readVarInt(), kills = b.readVarInt(), deaths = b.readVarInt(), wins = b.readVarInt(), matches = b.readVarInt();
+                    int n = b.readVarInt();
+                    java.util.Map<String, Integer> wk = new java.util.HashMap<>();
+                    for (int i = 0; i < n; i++) wk.put(b.readUtf(), b.readVarInt());
+                    return new Progress(xp, rank, kills, deaths, wins, matches, wk);
+                });
+
+        public int weaponKills(com.ditsjohann.warfront.weapon.GunType g) {
+            return weaponKills.getOrDefault(g.id, 0);
+        }
     }
 
     /** Camera shake (explosions, cannon fire, collapses). */
@@ -131,6 +153,12 @@ public final class SimplePackets {
         public static final StreamCodec<FriendlyByteBuf, Announce> CODEC = StreamCodec.of(
                 (b, p) -> { b.writeUtf(p.title); b.writeUtf(p.subtitle); b.writeVarInt(p.style); },
                 b -> new Announce(b.readUtf(), b.readUtf(), b.readVarInt()));
+    }
+
+    /** A player's scope glint turned on/off. */
+    public record Glint(int entityId, boolean on) {
+        public static final StreamCodec<FriendlyByteBuf, Glint> CODEC = StreamCodec.of(
+                (b, p) -> { b.writeVarInt(p.entityId); b.writeBoolean(p.on); }, b -> new Glint(b.readVarInt(), b.readBoolean()));
     }
 
     private SimplePackets() {}

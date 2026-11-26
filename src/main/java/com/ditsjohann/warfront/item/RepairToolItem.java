@@ -1,7 +1,7 @@
 package com.ditsjohann.warfront.item;
 
 import com.ditsjohann.warfront.combat.Teams;
-import com.ditsjohann.warfront.entity.TankEntity;
+import com.ditsjohann.warfront.entity.VehicleEntity;
 import com.ditsjohann.warfront.progression.Scoring;
 import com.ditsjohann.warfront.registry.ModComponents;
 import com.ditsjohann.warfront.registry.ModSounds;
@@ -59,7 +59,7 @@ public class RepairToolItem extends GadgetItem {
             sl.playSound(null, p.getX(), p.getY(), p.getZ(), ModSounds.get("dry_fire"), SoundSource.PLAYERS, 0.8f, 0.6f);
             return;
         }
-        TankEntity tank = target(p);
+        VehicleEntity tank = target(p);
         if (tank == null) return;
         stack.set(ModComponents.HEAT.get(), heat + 1);
         if (tank.repair(0.45f)) {
@@ -74,18 +74,18 @@ public class RepairToolItem extends GadgetItem {
         }
     }
 
-    private static TankEntity target(Player p) {
+    private static VehicleEntity target(Player p) {
         Vec3 eye = p.getEyePosition();
         Vec3 end = eye.add(p.getLookAngle().scale(4.5));
         AABB box = new AABB(eye, end).inflate(1);
-        TankEntity best = null;
+        VehicleEntity best = null;
         double bd = Double.MAX_VALUE;
-        for (Entity e : p.level().getEntities(p, box, e -> e instanceof TankEntity)) {
+        for (Entity e : p.level().getEntities(p, box, e -> e instanceof VehicleEntity)) {
             if (e.getBoundingBox().inflate(0.3).clip(eye, end).isPresent() || e.getBoundingBox().inflate(0.3).contains(eye)) {
                 double d = e.distanceToSqr(p);
                 if (d < bd) {
                     bd = d;
-                    best = (TankEntity) e;
+                    best = (VehicleEntity) e;
                 }
             }
         }

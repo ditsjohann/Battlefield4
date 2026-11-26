@@ -22,6 +22,8 @@ import org.jetbrains.annotations.Nullable;
 /** A bouncing, rolling fragmentation grenade with a timed fuse. */
 public class FragGrenadeEntity extends Projectile implements ItemSupplier {
     public static final double GRAVITY = 0.045;
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> SMOKE =
+            SynchedEntityData.defineId(FragGrenadeEntity.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
     private int fuse = 60;
 
     public FragGrenadeEntity(EntityType<? extends FragGrenadeEntity> type, Level level) {
@@ -29,7 +31,12 @@ public class FragGrenadeEntity extends Projectile implements ItemSupplier {
     }
 
     public static void throwFrom(ServerLevel level, @Nullable Entity owner, Vec3 from, Vec3 velocity, int fuse) {
+        throwFrom(level, owner, from, velocity, fuse, false);
+    }
+
+    public static void throwFrom(ServerLevel level, @Nullable Entity owner, Vec3 from, Vec3 velocity, int fuse, boolean smoke) {
         FragGrenadeEntity g = new FragGrenadeEntity(ModEntities.FRAG_GRENADE.get(), level);
+        g.entityData.set(SMOKE, smoke);
         g.setOwner(owner);
         g.setPos(from.x, from.y - 0.1, from.z);
         g.setDeltaMovement(velocity);
@@ -39,7 +46,13 @@ public class FragGrenadeEntity extends Projectile implements ItemSupplier {
     }
 
     @Override
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {}
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(SMOKE, false);
+    }
+
+    public boolean isSmoke() {
+        return entityData.get(SMOKE);
+    }
 
     @Override
     public void tick() {
@@ -68,24 +81,31 @@ public class FragGrenadeEntity extends Projectile implements ItemSupplier {
         }
         if (--fuse <= 0) {
             discard();
-            Explosions.blast((ServerLevel) level(), this, getOwner(), position().add(0, 0.2, 0), 3.0f, "Frag Grenade", 4);
+            if (isSmoke()) {
+                com.ditsjohann.warfront.combat.SmokeScreens.add((ServerLevel) level(), position().add(0, 0.5, 0), 6f, 400);
+                level().playSound(null, getX(), getY(), getZ(), net.minecraft.sounds.SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 1.2f, 0.6f);
+            } else {
+                Explosions.blast((ServerLevel) level(), this, getOwner(), position().add(0, 0.2, 0), 3.0f, "Frag Grenade", 4);
+            }
         }
     }
 
     @Override
     public ItemStack getItem() {
-        return new ItemStack(ModItems.FRAG_GRENADE.get());
+        return new ItemStack(isSmoke() ? ModItems.SMOKE_GRENADE.get() : ModItems.FRAG_GRENADE.get());
     }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putInt("Fuse", fuse);
+        tag.putBoolean("Smoke", isSmoke());
     }
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         fuse = tag.getInt("Fuse");
+        entityData.set(SMOKE, tag.getBoolean("Smoke"));
     }
 }

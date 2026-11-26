@@ -6,6 +6,8 @@ import com.ditsjohann.warfront.combat.Teams;
 import com.ditsjohann.warfront.entity.SoldierEntity;
 import com.ditsjohann.warfront.entity.SoldierRole;
 import com.ditsjohann.warfront.entity.TankEntity;
+import com.ditsjohann.warfront.entity.BuggyEntity;
+import com.ditsjohann.warfront.entity.VehicleEntity;
 import com.ditsjohann.warfront.network.WarfrontNet;
 import com.ditsjohann.warfront.network.packets.SimplePackets;
 import com.ditsjohann.warfront.progression.PlayerProgress;
@@ -55,6 +57,10 @@ public final class ConquestMatch {
     public int towerIntegrity = 100;
     public boolean towerCollapsed;
     public int towerFlag = -1;
+    public @Nullable BlockPos depotPos;
+    public int depotIntegrity = 60;
+    public boolean depotDestroyed;
+    public final List<BlockPos> fuelTanks = new ArrayList<>();
     public int minX, minZ, maxX, maxZ;
     public int winner = -1;
     public final Map<UUID, Participant> participants = new LinkedHashMap<>();
@@ -90,8 +96,9 @@ public final class ConquestMatch {
         public final Faction faction;
         public int objective = -1;
         public @Nullable UUID leader;
-        /** -1 follow leader, otherwise objective index ordered by the player. */
+        /** -1 follow leader, -2 hold {@link #holdPos}, otherwise objective index ordered by the player. */
         public int order = -1;
+        public @Nullable Vec3 holdPos;
         public long orderTime;
 
         Squad(int id, Faction faction) {
@@ -101,14 +108,18 @@ public final class ConquestMatch {
     }
 
     public static final class VehiclePad {
+        public static final int TANK = 0, BUGGY = 1;
         public final BlockPos pos;
         public final Faction faction;
+        public final int kind;
         public @Nullable UUID vehicle;
         public int cooldown = 200;
 
-        VehiclePad(BlockPos pos, Faction faction) {
+        VehiclePad(BlockPos pos, Faction faction, int kind) {
             this.pos = pos;
             this.faction = faction;
+            this.kind = kind;
+            if (kind == BUGGY) cooldown = 120; // light vehicles roll out first
         }
     }
 
@@ -147,6 +158,7 @@ public final class ConquestMatch {
         if (s == null) return null;
         if (s.leader != null) {
             if (s.order >= 0 && s.order < flags.size()) return Vec3.atBottomCenterOf(flags.get(s.order).pos);
+            if (s.order == -2 && s.holdPos != null) return s.holdPos;
             Player p = level.getPlayerByUUID(s.leader);
             Participant pt = participants.get(s.leader);
             if (p != null && p.isAlive() && pt != null && pt.deployed) return p.position();
@@ -353,7 +365,7 @@ public final class ConquestMatch {
         forceChunks(level, false);
         AABB area = new AABB(minX - 64, level.getMinBuildHeight(), minZ - 64, maxX + 64, level.getMaxBuildHeight(), maxZ + 64);
         for (Entity e : level.getEntities((Entity) null, area, e -> e instanceof SoldierEntity s && id.equals(s.getMatchId())
-                || e instanceof TankEntity t && id.equals(t.getMatchId()))) {
+                || e instanceof VehicleEntity t && id.equals(t.getMatchId()))) {
             e.discard();
         }
         for (ServerPlayer p : level.players()) {
@@ -474,6 +486,54 @@ public final class ConquestMatch {
         }
     }
 
+    /** Commo-rose orders from a squad leader, and support requests to nearby AI. */
+    public void command(ServerLevel level, ServerPlayer p, int cmd, int arg) {
+        Participant pt = participants.get(p.getUUID());
+        if (pt == null) return;
+        Squad s = squads.get(pt.squadId);
+        switch (cmd) {
+            case SimplePackets.SquadCommand.FLAG -> {
+                if (s == null || arg < 0 || arg >= flags.size()) return;
+                s.order = arg;
+                s.orderTime = level.getGameTime();
+                Objective o = flags.get(arg);
+                WarfrontNet.toPlayer(p, new SimplePackets.Score(0, "SQUAD ORDER: " + (o.owner == pt.faction ? "DEFEND " : "ATTACK ") + o.letter));
+            }
+            case SimplePackets.SquadCommand.FOLLOW -> {
+                if (s == null) return;
+                s.order = -1;
+                WarfrontNet.toPlayer(p, new SimplePackets.Score(0, "SQUAD ORDER: FOLLOW ME"));
+            }
+            case SimplePackets.SquadCommand.HOLD -> {
+                if (s == null) return;
+                s.order = -2;
+                s.holdPos = p.position();
+                WarfrontNet.toPlayer(p, new SimplePackets.Score(0, "SQUAD ORDER: HOLD THIS POSITION"));
+            }
+            case SimplePackets.SquadCommand.MEDIC, SimplePackets.SquadCommand.AMMO -> {
+                boolean ammo = cmd == SimplePackets.SquadCommand.AMMO;
+                SoldierRole role = ammo ? SoldierRole.SUPPORT : SoldierRole.ASSAULT;
+                SoldierEntity helper = null;
+                double best = 64 * 64;
+                for (SoldierEntity e : level.getEntitiesOfClass(SoldierEntity.class, p.getBoundingBox().inflate(64),
+                        e -> e.getRole() == role && e.getFaction() == pt.faction && e.isCombatant() && !e.isPassenger())) {
+                    double d = e.distanceToSqr(p) * (e.getSquadId() == pt.squadId ? 0.5 : 1);
+                    if (d < best) {
+                        best = d;
+                        helper = e;
+                    }
+                }
+                if (helper == null) {
+                    WarfrontNet.toPlayer(p, new SimplePackets.Score(0, ammo ? "NO SUPPORT NEARBY" : "NO MEDIC NEARBY"));
+                    return;
+                }
+                helper.requestAssist(p, ammo);
+                WarfrontNet.toPlayer(p, new SimplePackets.Score(0, (ammo ? "AMMO" : "MEDIC") + " INBOUND: " + helper.getName().getString()));
+            }
+            default -> {}
+        }
+    }
+
     private void tickPads(ServerLevel level) {
         for (VehiclePad pad : pads) {
             Entity v = pad.vehicle == null ? null : level.getEntity(pad.vehicle);
@@ -482,16 +542,20 @@ public final class ConquestMatch {
             pad.cooldown -= 20;
             if (pad.cooldown > 0 || tickets[pad.faction.ordinal()] <= 0) continue;
             if (!level.isLoaded(pad.pos)) continue;
-            TankEntity tank = TankEntity.spawn(level, pad.pos.above(), pad.faction, id);
-            if (tank != null) {
-                pad.vehicle = tank.getUUID();
-                pad.cooldown = 1200; // one minute between tank respawns
-                // an AI crew takes the tank to the front; players can claim it by climbing in
+            VehicleEntity vehicle = pad.kind == VehiclePad.BUGGY ? BuggyEntity.spawn(level, pad.pos.above(), pad.faction, id)
+                    : TankEntity.spawn(level, pad.pos.above(), pad.faction, id);
+            if (vehicle != null) {
+                pad.vehicle = vehicle.getUUID();
+                pad.cooldown = pad.kind == VehiclePad.BUGGY ? 700 : 1200;
+                // an AI crew takes the vehicle to the front; players can claim it by climbing in
                 Squad crewSquad = new Squad(nextSquad++, pad.faction);
                 crewSquad.objective = Commander.choose(this, pad.faction, pad.pos, crewSquad.id);
                 squads.put(crewSquad.id, crewSquad);
-                SoldierEntity crew = SoldierEntity.spawn(level, pad.pos.above(), pad.faction, SoldierRole.ENGINEER, crewSquad.id, id);
-                if (crew != null) crew.startRiding(tank, true);
+                SoldierRole[] crew = pad.kind == VehiclePad.BUGGY ? new SoldierRole[]{SoldierRole.ASSAULT, SoldierRole.SUPPORT} : new SoldierRole[]{SoldierRole.ENGINEER};
+                for (SoldierRole role : crew) {
+                    SoldierEntity c = SoldierEntity.spawn(level, pad.pos.above(), pad.faction, role, crewSquad.id, id);
+                    if (c != null) c.startRiding(vehicle, true);
+                }
             }
         }
     }
@@ -517,6 +581,14 @@ public final class ConquestMatch {
         for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && Teams.of(e) == holder.enemy())) {
             if (level.random.nextFloat() < 0.5f) Spotting.mark(level, e, null);
         }
+    }
+
+    public void damageDepot(ServerLevel level, int amount, @Nullable Entity cause) {
+        if (depotPos == null || depotDestroyed || state != LIVE) return;
+        int before = depotIntegrity;
+        depotIntegrity = Math.max(0, depotIntegrity - amount);
+        if (before > 30 && depotIntegrity <= 30) broadcast(level, new SimplePackets.Announce("FUEL DEPOT LEAKING", "One more hit and it goes up", 0));
+        if (before > 0 && depotIntegrity == 0) DepotExplosion.begin(level, this, cause);
     }
 
     public void damageTower(ServerLevel level, int amount, @Nullable Entity cause) {
@@ -586,7 +658,7 @@ public final class ConquestMatch {
         Faction up = uplinkHolder();
         return new MatchSnapshot(true, state, t, tickets[0], tickets[1], maxTickets, fl, hq[0], hq[1], bc,
                 towerBase == null ? BlockPos.ZERO : towerBase, towerIntegrity, towerCollapsed, up == null ? -1 : up.ordinal(),
-                ps, winner, minX, minZ, maxX, maxZ, lastAliveA, lastAliveB);
+                ps, winner, minX, minZ, maxX, maxZ, lastAliveA, lastAliveB, depotPos == null ? BlockPos.ZERO : depotPos, depotDestroyed);
     }
 
     public CompoundTag save() {
@@ -607,6 +679,7 @@ public final class ConquestMatch {
             CompoundTag c = new CompoundTag();
             c.put("pos", NbtUtils.writeBlockPos(p.pos));
             c.putInt("faction", p.faction.ordinal());
+            c.putInt("kind", p.kind);
             if (p.vehicle != null) c.putUUID("vehicle", p.vehicle);
             c.putInt("cooldown", p.cooldown);
             pl.add(c);
@@ -616,6 +689,10 @@ public final class ConquestMatch {
         t.putInt("towerIntegrity", towerIntegrity);
         t.putBoolean("towerCollapsed", towerCollapsed);
         t.putInt("towerFlag", towerFlag);
+        if (depotPos != null) t.put("depot", NbtUtils.writeBlockPos(depotPos));
+        t.putInt("depotIntegrity", depotIntegrity);
+        t.putBoolean("depotDestroyed", depotDestroyed);
+        t.putLongArray("fuelTanks", fuelTanks.stream().mapToLong(BlockPos::asLong).toArray());
         t.putIntArray("bounds", new int[]{minX, minZ, maxX, maxZ});
         t.putInt("winner", winner);
         ListTag parts = new ListTag();
@@ -675,7 +752,7 @@ public final class ConquestMatch {
         m.hq[1] = NbtUtils.readBlockPos(t, "hqB").orElse(BlockPos.ZERO);
         for (Tag pt : t.getList("pads", Tag.TAG_COMPOUND)) {
             CompoundTag c = (CompoundTag) pt;
-            VehiclePad p = new VehiclePad(NbtUtils.readBlockPos(c, "pos").orElse(BlockPos.ZERO), Faction.byId(c.getInt("faction")));
+            VehiclePad p = new VehiclePad(NbtUtils.readBlockPos(c, "pos").orElse(BlockPos.ZERO), Faction.byId(c.getInt("faction")), c.getInt("kind"));
             if (c.hasUUID("vehicle")) p.vehicle = c.getUUID("vehicle");
             p.cooldown = c.getInt("cooldown");
             m.pads.add(p);
@@ -684,6 +761,10 @@ public final class ConquestMatch {
         m.towerIntegrity = t.getInt("towerIntegrity");
         m.towerCollapsed = t.getBoolean("towerCollapsed");
         m.towerFlag = t.getInt("towerFlag");
+        m.depotPos = NbtUtils.readBlockPos(t, "depot").orElse(null);
+        m.depotIntegrity = t.contains("depotIntegrity") ? t.getInt("depotIntegrity") : 60;
+        m.depotDestroyed = t.getBoolean("depotDestroyed");
+        for (long l : t.getLongArray("fuelTanks")) m.fuelTanks.add(BlockPos.of(l));
         int[] b = t.getIntArray("bounds");
         if (b.length == 4) {
             m.minX = b[0];

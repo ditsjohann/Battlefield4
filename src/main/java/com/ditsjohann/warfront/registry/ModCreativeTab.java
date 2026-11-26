@@ -19,6 +19,7 @@ public final class ModCreativeTab {
                 out.accept(ModItems.WAR_TABLE.get());
                 for (GunType t : GunType.values()) out.accept(ModItems.gun(t));
                 out.accept(ModItems.FRAG_GRENADE.get());
+                out.accept(ModItems.SMOKE_GRENADE.get());
                 out.accept(ModItems.MEDIC_BAG.get());
                 out.accept(ModItems.DEFIBRILLATOR.get());
                 out.accept(ModItems.ROCKET_LAUNCHER.get());
@@ -28,6 +29,7 @@ public final class ModCreativeTab {
                 out.accept(ModItems.SPAWN_BEACON.get());
                 out.accept(ModItems.FIELD_BINOCULARS.get());
                 out.accept(ModItems.TANK_DEPLOYER.get());
+                out.accept(ModItems.BUGGY_DEPLOYER.get());
                 out.accept(ModItems.SOLDIER_SPAWN_EGG.get());
                 out.accept(ModItems.SANDBAG.get());
                 out.accept(ModItems.RESUPPLY_CRATE.get());

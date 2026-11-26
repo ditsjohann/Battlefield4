@@ -165,9 +165,13 @@ def gen_guns():
         "shotgun_shot": (1500, 2500, 0.1, 0.5, 1.5, 0.35, 0.1),
     }
     for name, (b, c, d, tail, p, r, m) in guns.items():
-        x = gunshot(b, c, d, tail, p, r, metal=m)
-        write(name, x)
-        write(name + "_far", distant(x, 700 if "sniper" in name else 1000), peak=0.7)
+        for v in range(3):
+            # each variant re-rolls the noise and nudges the body/tail so automatic fire never loops audibly
+            j = 1 + (v - 1) * 0.06
+            x = gunshot(b * j, c, d * (2 - j), tail, p, r, metal=m)
+            suffix = "" if v == 0 else f"_v{v + 1}"
+            write(name + suffix, x)
+            write(name + "_far" + suffix, distant(x, 700 if "sniper" in name else 1000), peak=0.7)
     # suppressed: mostly mechanical + small puff
     puff = lowpass_fast(noise(0.2), 1800) * env_exp(0.2, 0.02)
     mech = shift(bandpass_fast(noise(0.06), 2000, 7000) * env_exp(0.06, 0.012) * 0.8, 0.01)
@@ -225,6 +229,18 @@ def gen_feedback():
     whiz = bandpass_fast(noise(0.22), 1200, 7000) * np.concatenate([np.linspace(0, 1, int(SR * 0.08)), np.linspace(1, 0, int(SR * 0.14))])
     crack = highpass_fast(noise(0.012), 3000) * env_exp(0.012, 0.002) * 2
     write("bullet_crack", pad(mix(crack, whiz * 0.7), 0.3))
+    for v in (2, 3):
+        whiz = bandpass_fast(noise(0.22), 900 + v * 300, 6500 + v * 400) * np.concatenate([np.linspace(0, 1, int(SR * (0.05 + v * 0.02))), np.linspace(1, 0, int(SR * (0.17 - v * 0.02)))])
+        write(f"bullet_crack_v{v}", pad(mix(highpass_fast(noise(0.012), 3000) * env_exp(0.012, 0.002) * 2, whiz * 0.7), 0.3))
+        write(f"bullet_impact_v{v}", pad(mix(bandpass_fast(noise(0.12), 600 + v * 200, 5000 + v * 500) * env_exp(0.12, 0.012 + v * 0.003),
+                                             lowpass_fast(noise(0.1), 450) * env_exp(0.1, 0.02) * 0.6), 0.15))
+    # magazine running dry: light rattle of the last rounds
+    rattle = np.zeros(int(SR * 0.12))
+    for k in range(4):
+        c = bandpass_fast(noise(0.02), 3000, 9000) * env_exp(0.02, 0.003) * (0.8 - k * 0.15)
+        st = int(k * 0.022 * SR)
+        rattle[st:st + len(c)] += c[:len(rattle) - st]
+    write("ammo_low", pad(mix(rattle, sine(5200, 0.06) * env_exp(0.06, 0.01) * 0.2), 0.14))
     # bullet impact on block: dusty chip
     write("bullet_impact", pad(mix(bandpass_fast(noise(0.12), 800, 6000) * env_exp(0.12, 0.015), lowpass_fast(noise(0.1), 500) * env_exp(0.1, 0.02) * 0.6), 0.15))
     # ricochet whine
@@ -278,6 +294,10 @@ def gen_explosions():
         return reverb(x, room=0.5, decay=0.5, taps=8)
 
     write("explosion", boom(2.4, 900, 0.35))
+    write("explosion_v2", boom(2.6, 800, 0.4))
+    write("explosion_v3", boom(2.2, 1000, 0.3))
+    write("grenade_explode_v2", boom(1.6, 1300, 0.24, 1.0, 64))
+    write("grenade_explode_v3", boom(1.5, 1500, 0.2, 0.9, 76))
     write("explosion_far", distant(boom(2.4, 900, 0.35), 350), peak=0.75)
     write("grenade_explode", boom(1.6, 1400, 0.22, 1.0, 70))
     write("tank_cannon", mix(gunshot(900, 2000, 0.2, 0.6, 2.4, 0.6, dur=2.0), shift(sine(40, 1.5, 22) * env_exp(1.5, 0.4), 0.0)))

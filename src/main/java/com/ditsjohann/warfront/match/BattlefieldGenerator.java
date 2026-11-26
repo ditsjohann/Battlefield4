@@ -66,6 +66,10 @@ public final class BattlefieldGenerator {
                 o.control = near.enemy() == Faction.COALITION ? 1 : -1;
             }
             if (level.getBlockEntity(flagPos) instanceof CapturePointBlockEntity be) be.setLetter(o.letter);
+            if (i == 1 && n >= 3) {
+                BlockPos depotAt = surface(level, center.getX() - px * 13, center.getZ() - pz * 13);
+                buildDepot(level, depotAt, px, pz, m);
+            }
             if (i == mid) {
                 o.hasTower = true;
                 m.towerFlag = i;
@@ -189,18 +193,52 @@ public final class BattlefieldGenerator {
         // resupply cabinets
         level.setBlock(hq.offset(3, 0, 3), ModBlocks.RESUPPLY_CRATE.get().defaultBlockState(), 3);
         level.setBlock(hq.offset(-3, 0, -3), ModBlocks.RESUPPLY_CRATE.get().defaultBlockState(), 3);
-        // vehicle pad toward the battle, with hazard markings
-        BlockPos pad = hq.relative(toBattle, 5).relative(toBattle.getClockWise(), 4);
+        // vehicle pads toward the battle, with hazard markings: main battle tank and fast attack vehicle
+        BlockPos tankPad = hq.relative(toBattle, 5).relative(toBattle.getClockWise(), 4);
+        BlockPos buggyPad = hq.relative(toBattle, 5).relative(toBattle.getCounterClockWise(), 4);
+        buildPad(level, tankPad, Blocks.YELLOW_CONCRETE);
+        buildPad(level, buggyPad, Blocks.ORANGE_CONCRETE);
+        m.pads.add(new ConquestMatch.VehiclePad(tankPad, f, ConquestMatch.VehiclePad.TANK));
+        m.pads.add(new ConquestMatch.VehiclePad(buggyPad, f, ConquestMatch.VehiclePad.BUGGY));
+        return hq.above();
+    }
+
+    /** Fuel depot: two storage tanks joined by pipework. Explosive damage sets it off (see DepotExplosion). */
+    private static void buildDepot(ServerLevel level, BlockPos center, int px, int pz, ConquestMatch m) {
+        RandomSource rnd = level.random;
+        int y = preparePad(level, center, 7, Blocks.GRAVEL.defaultBlockState(), Blocks.COARSE_DIRT.defaultBlockState(), rnd);
+        BlockPos base = new BlockPos(center.getX(), y, center.getZ());
+        for (int side = -1; side <= 1; side += 2) {
+            BlockPos tank = base.offset(px * side * 3, 0, pz * side * 3);
+            for (int dx = -2; dx <= 2; dx++) {
+                for (int dz = -2; dz <= 2; dz++) {
+                    if (dx * dx + dz * dz > 5) continue;
+                    for (int h = 0; h < 5; h++) {
+                        BlockState s = h == 2 ? Blocks.RED_CONCRETE.defaultBlockState() : h == 4 ? Blocks.LIGHT_GRAY_CONCRETE.defaultBlockState() : Blocks.WHITE_CONCRETE.defaultBlockState();
+                        level.setBlock(tank.offset(dx, h, dz), s, 2);
+                    }
+                }
+            }
+            level.setBlock(tank.above(5), Blocks.IRON_TRAPDOOR.defaultBlockState(), 2);
+            m.fuelTanks.add(tank.above(2));
+        }
+        // pipework and hazard barrels
+        for (int k = -1; k <= 1; k++) level.setBlock(base.offset(px * k, 1, pz * k), Blocks.IRON_BARS.defaultBlockState(), 2);
+        level.setBlock(base.offset(-pz * 3, 0, px * 3), Blocks.BARREL.defaultBlockState(), 2);
+        level.setBlock(base.offset(pz * 3, 0, -px * 3), Blocks.BARREL.defaultBlockState(), 2);
+        level.setBlock(base.offset(-pz * 3, 1, px * 3), Blocks.BARREL.defaultBlockState(), 2);
+        m.depotPos = base.above(2);
+    }
+
+    private static void buildPad(ServerLevel level, BlockPos pad, Block marking) {
         for (int dx = -1; dx <= 1; dx++)
             for (int dz = -1; dz <= 1; dz++)
-                level.setBlock(pad.offset(dx, -1, dz), Blocks.YELLOW_CONCRETE.defaultBlockState(), 2);
+                level.setBlock(pad.offset(dx, -1, dz), marking.defaultBlockState(), 2);
         level.setBlock(pad.below(), ModBlocks.VEHICLE_PAD.get().defaultBlockState(), 3);
         for (int h = 0; h < 4; h++)
             for (int dx = -2; dx <= 2; dx++)
                 for (int dz = -2; dz <= 2; dz++)
                     level.setBlock(pad.offset(dx, h, dz), Blocks.AIR.defaultBlockState(), 2);
-        m.pads.add(new ConquestMatch.VehiclePad(pad, f));
-        return hq.above();
     }
 
     /** The Comms Tower: concrete pillars, three floors, an internal ladder and an antenna mast. */

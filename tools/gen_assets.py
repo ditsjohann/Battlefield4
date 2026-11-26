@@ -211,7 +211,7 @@ def gen_guns():
 
 
 # ------------------------------------------------------------------ gadgets / flat items
-FLAT = ["frag_grenade", "medic_bag", "ammo_bag", "c4", "defibrillator", "repair_tool", "spawn_beacon", "rocket", "tank_deployer",
+FLAT = ["frag_grenade", "smoke_grenade", "medic_bag", "ammo_bag", "c4", "defibrillator", "repair_tool", "spawn_beacon", "rocket", "tank_deployer", "buggy_deployer",
         "dog_tag", "field_binoculars"]
 
 
@@ -270,15 +270,24 @@ def gen_blocks():
 
 
 def gen_sounds():
-    names = sorted(f[:-4] for f in os.listdir(os.path.join(A, "sounds")) if f.endswith(".ogg"))
+    import re
+    files = sorted(f[:-4] for f in os.listdir(os.path.join(A, "sounds")) if f.endswith(".ogg"))
+    groups = {}
+    for f in files:
+        base = re.sub(r"_v\d$", "", f)
+        groups.setdefault(base, []).append(f)
     sounds = {}
-    for n in names:
-        entry = {"sounds": [{"name": f"warfront:{n}"}], "subtitle": f"subtitles.warfront.{n}"}
-        if n.endswith("_far") or n in ("tower_collapse", "tower_alarm", "explosion"):
-            entry["sounds"] = [{"name": f"warfront:{n}", "attenuation_distance": 64 if not n.endswith("_far") else 24}]
-        sounds[n] = entry
+    for base, variants in groups.items():
+        far = base.endswith("_far") or base in ("tower_collapse", "tower_alarm", "explosion")
+        entries = []
+        for v in variants:
+            e = {"name": f"warfront:{v}"}
+            if far:
+                e["attenuation_distance"] = 24 if base.endswith("_far") else 64
+            entries.append(e)
+        sounds[base] = {"sounds": entries, "subtitle": f"subtitles.warfront.{base}"}
     write(os.path.join(A, "sounds.json"), sounds)
-    return names
+    return sorted(groups)
 
 
 def gen_lang(sound_names):
@@ -290,7 +299,9 @@ def gen_lang(sound_names):
         "key.warfront.spot": "Spot / Squad Order",
         "key.warfront.deploy": "Deploy Screen",
         "key.warfront.scoreboard": "Battle Scoreboard",
+        "key.warfront.orders": "Squad Orders (hold)",
         "item.warfront.frag_grenade": "Frag Grenade",
+        "item.warfront.smoke_grenade": "Smoke Grenade",
         "item.warfront.medic_bag": "Medic Bag",
         "item.warfront.ammo_bag": "Ammo Bag",
         "item.warfront.defibrillator": "Defibrillator",
@@ -300,6 +311,8 @@ def gen_lang(sound_names):
         "item.warfront.spawn_beacon": "Radio Spawn Beacon",
         "item.warfront.field_binoculars": "Field Binoculars",
         "item.warfront.tank_deployer": "MBT-9 Airdrop",
+        "item.warfront.buggy_deployer": "FAV-3 Airdrop",
+        "entity.warfront.buggy": "FAV-3 Jackal",
         "item.warfront.dog_tag": "Dog Tag",
         "item.warfront.soldier_spawn_egg": "Soldier Spawn Egg",
         "block.warfront.war_table": "War Table",

@@ -91,8 +91,40 @@ Key decisions (with reasoning in `RESEARCH.md` §3):
   popups, announcements, suppression/damage vignettes, camera shake, tank HUD, scoreboard.
 - **Progression:** 14 ranks, XP from all score events, persistent career stats, rank-gated unlocks.
 
+### Done (second wave)
+- **Multiplayer polish:** other players see you shoulder guns in a two-handed aiming pose
+  (`IClientItemExtensions#getArmPose`); **scope glint**, where aiming a 4x or 8x optic flashes a
+  glint to anyone the scope points at (players via a server-relayed aim state, AI recon snipers
+  from their synced aiming flag). It scales with distance so countersnipers can find you.
+- **Weapon mastery:** attachments unlock per weapon by kills with that gun (BF4-style), validated
+  server-side on deploy. Unlock announcements, and "Next: Holo 2x (4/10)" progress on the deploy
+  screen.
+- **Squad orders radial (commo rose):** hold V for attack/defend on each flag, follow me, hold
+  here, need medic, need ammo. Medic/ammo calls send the nearest friendly AI medic or support
+  gunner running over to drop a bag at your feet.
+- **Vehicles:** `VehicleEntity` base class (armour model, disabled/burning, seats, boat-style
+  sync, crushing, AI driving). New **FAV-3 Jackal** fast attack vehicle: driver plus a rear HMG
+  gunner, overheat, thin armour (rifles hurt it), circle-strafing AI. Climb into an AI buggy and
+  you take the wheel while the AI crew mans the gun. HQs now field a tank pad and a buggy pad with AI
+  crews.
+- **AI vehicle tactics:** tanks keep a standoff from infantry (rockets) and hold to shoot; light
+  vehicles circle targets; damaged vehicles retreat to HQ, where the ground crew repairs them;
+  crews bail out of burning vehicles and fight on foot.
+- **Second Levolution set-piece, the fuel depot:** two storage tanks beside flag B. Explosive
+  damage ignites a chain reaction (three blasts, crater, fires) that blankets the flag in smoke
+  for 45 s.
+- **Smoke as a gameplay system:** smoke blocks AI line of sight, spotting and vehicle targeting.
+  Recon carries smoke grenades.
+- **Sound pass:** three variants of every gunshot (near and far), bullet crack, impact and
+  explosion; a low-ammo magazine rattle.
+
 ### Testing (verified 2026-11-26)
-- `./gradlew runGameTestServer`: **18/18 pass**. Covers ballistics, penetration, sandbag cover,
+- **Dedicated server:** Forge's `server_gametest` launch target runs as `Dist.DEDICATED_SERVER`
+  (client classes stripped), so the GameTest suite also proves the mod loads and runs on the
+  dedicated-server distribution.
+- `./gradlew runGameTestServer`: **23/23 pass** (second wave added: buggy armour, crew bail-out,
+  weapon-kill unlock rules, smoke blinding AI, fuel depot chain reaction).
+- `./gradlew runGameTestServer` (first wave): 18 tests. Covers ballistics, penetration, sandbag cover,
   headshots, pass-through allies, spread cone maths, reload, frag grenade, rocket vs tank, armour
   model, crushability, flag capture, contested flags, ticket bleed, downed/revive ticket
   bookkeeping, tower collapse and attachment trade-offs.
@@ -113,18 +145,19 @@ Key decisions (with reasoning in `RESEARCH.md` §3):
 - Tank movement is arcade kinematics; no slope tilt of the hull.
 - Downed players are invulnerable until revived or they bleed out (matches BF4); there is no
   finisher.
-- Verified on the integrated server and the GameTest server only. A dedicated-server smoke test
-  (`./gradlew runServer`, which needs `run/eula.txt` accepted by you) is still to do.
+- A networked dedicated server with two real clients hasn't been exercised: dedicated-dist loading
+  is proven via the GameTest server, but `./gradlew runServer` needs `run/eula.txt` accepted by you.
 - With the default GUI scale at 720p the HUD is dense; the kill feed is drawn at 75% scale.
 
 ## Next priorities
-1. Dedicated server smoke test and multiplayer polish (scope glint for other players,
-   third-person aiming pose for players).
-2. A second vehicle (fast attack buggy with mounted gun) and AI vehicle tactics.
-3. Squad leader orders UI (commo-rose style radial).
-4. More Levolution set-pieces generated per biome (dam in rivers, bridge, flood).
-5. Weapon unlock progression per class (kills with a weapon unlock its attachments, BF4-style).
-6. Sound pass: interior/exterior reverb, ammo-low mag rattle, bullet whiz variants.
+1. Two-client networked playtest on a dedicated server (scope glint, buggy gunner seat sync,
+   commo rose orders across players).
+2. Per-biome Levolution variants (a dam in river biomes, a bridge over ravines, an avalanche in
+   snowy mountains) reusing the integrity → scripted collapse pattern.
+3. Helicopter or attack drone as the first air asset, plus AA for engineers.
+4. Squad play for multiple human players (shared squads, squad spawn, squad leader score).
+5. Commander role: UAV scan and supply drop on a cooldown, earned by holding flags.
+6. Animated first-person reloads (magazine swap via arm keyframes).
 
 ## Development environment notes
 - ForgeGradle 7's Mavenizer runs tools on **JDK 25** and **JDK 8**. On machines without internet

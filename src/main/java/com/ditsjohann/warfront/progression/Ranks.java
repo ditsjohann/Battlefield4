@@ -1,6 +1,5 @@
 package com.ditsjohann.warfront.progression;
 
-import com.ditsjohann.warfront.weapon.Attachment;
 import com.ditsjohann.warfront.weapon.GunType;
 
 import java.util.ArrayList;
@@ -34,7 +33,6 @@ public final class Ranks {
     public static List<String> unlocksAt(int rank) {
         List<String> out = new ArrayList<>();
         for (GunType g : GunType.values()) if (g.rankRequired == rank && rank > 0) out.add(g.displayName);
-        for (Attachment a : Attachment.values()) if (a.rankRequired == rank && rank > 0) out.add(a.label);
         return out;
     }
 

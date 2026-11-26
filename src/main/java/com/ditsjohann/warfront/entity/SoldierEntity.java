@@ -74,6 +74,9 @@ public class SoldierEntity extends PathfinderMob implements FactionMember {
     public int rocketCooldown = 80;
     public int rockets = 3;
     public float shotDebt;
+    @Nullable public UUID assistTarget;
+    public boolean assistAmmo;
+    public long assistUntil;
 
     public SoldierEntity(EntityType<? extends SoldierEntity> type, Level level) {
         super(type, level);
@@ -148,6 +151,7 @@ public class SoldierEntity extends PathfinderMob implements FactionMember {
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new ReviveAllyGoal(this));
+        this.goalSelector.addGoal(1, new AssistPlayerGoal(this));
         this.goalSelector.addGoal(2, new SoldierCombatGoal(this));
         this.goalSelector.addGoal(3, new ObjectiveGoal(this));
         this.goalSelector.addGoal(4, new OpenDoorGoal(this, true));
@@ -200,6 +204,13 @@ public class SoldierEntity extends PathfinderMob implements FactionMember {
             heardPos = le.getEyePosition();
             heardTime = level().getGameTime();
         }
+    }
+
+    /** A player asked for a medic bag / ammo bag; walk over and drop one. */
+    public void requestAssist(Player p, boolean ammo) {
+        assistTarget = p.getUUID();
+        assistAmmo = ammo;
+        assistUntil = level().getGameTime() + 400;
     }
 
     public void hearGunfire(LivingEntity shooter) {
@@ -260,7 +271,7 @@ public class SoldierEntity extends PathfinderMob implements FactionMember {
 
     @Override
     protected void customServerAiStep() {
-        if (isDowned() || getVehicle() instanceof TankEntity) return; // tank crews are driven by the tank
+        if (isDowned() || getVehicle() instanceof VehicleEntity) return; // tank crews are driven by the tank
         super.customServerAiStep();
     }
 

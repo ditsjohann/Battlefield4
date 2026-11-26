@@ -28,6 +28,19 @@ public final class Scoring {
 
     public static void countKill(ServerPlayer p) { PlayerProgress.add(p, "kills", 1); }
 
+    /** Weapon mastery: kills with a gun unlock its attachments. */
+    public static void countWeaponKill(ServerPlayer p, com.ditsjohann.warfront.weapon.GunType gun) {
+        int before = PlayerProgress.weaponKills(p, gun);
+        PlayerProgress.add(p, "wk_" + gun.id, 1);
+        int after = before + 1;
+        for (com.ditsjohann.warfront.weapon.Attachment a : com.ditsjohann.warfront.weapon.Attachment.values()) {
+            if (a.killsRequired == after && gun.allows(a)) {
+                WarfrontNet.toPlayer(p, new SimplePackets.Announce("UNLOCKED: " + a.label.toUpperCase(), "for the " + gun.displayName + " (" + after + " kills)", 1));
+            }
+        }
+        PlayerProgress.sync(p);
+    }
+
     public static void countDeath(ServerPlayer p) {
         PlayerProgress.add(p, "deaths", 1);
         PlayerProgress.sync(p);

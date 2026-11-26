@@ -62,6 +62,11 @@ public class GunItem extends Item {
     }
 
     @Override
+    public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(com.ditsjohann.warfront.client.GunClientExtensions.INSTANCE);
+    }
+
+    @Override
     public boolean canAttackBlock(BlockState state, Level level, BlockPos pos, Player player) {
         return false;
     }

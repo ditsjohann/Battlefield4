@@ -71,7 +71,7 @@ public class C4Entity extends Projectile implements BulletTarget {
     public void detonate() {
         if (!(level() instanceof ServerLevel sl) || isRemoved()) return;
         discard();
-        if (stuckTo instanceof TankEntity t) t.damageVehicle(55, getOwner(), "C4");
+        if (stuckTo instanceof VehicleEntity t) t.damageVehicle(55, getOwner(), "C4");
         Explosions.blast(sl, this, getOwner(), position(), 4.2f, "C4", 26);
     }
 

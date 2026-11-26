@@ -42,12 +42,14 @@ public final class WarfrontClient {
         event.register(KeyBinds.SPOT);
         event.register(KeyBinds.DEPLOY);
         event.register(KeyBinds.SCOREBOARD);
+        event.register(KeyBinds.ORDERS);
     }
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.SOLDIER.get(), SoldierRenderer::new);
         event.registerEntityRenderer(ModEntities.TANK.get(), TankRenderer::new);
+        event.registerEntityRenderer(ModEntities.BUGGY.get(), BuggyRenderer::new);
         event.registerEntityRenderer(ModEntities.FRAG_GRENADE.get(), ctx -> new ThrownItemRenderer<>(ctx, 0.8f, true));
         event.registerEntityRenderer(ModEntities.ROCKET.get(), RocketRenderer::new);
         event.registerEntityRenderer(ModEntities.C4.get(), GadgetRenderers.C4::new);

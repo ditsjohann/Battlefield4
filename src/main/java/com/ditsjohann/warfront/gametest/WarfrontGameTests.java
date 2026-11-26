@@ -303,5 +303,77 @@ public final class WarfrontGameTests {
         h.succeed();
     }
 
+    // ------------------------------------------------------------------ second-wave features
+    @GameTest(template = ARENA, timeoutTicks = 60)
+    public static void buggyArmourIsThin(GameTestHelper h) {
+        com.ditsjohann.warfront.entity.BuggyEntity buggy = com.ditsjohann.warfront.entity.BuggyEntity.spawn(h.getLevel(), h.absolutePos(new BlockPos(20, 1, 16)), Faction.LEGION, null);
+        SoldierEntity a = soldier(h, 4, 16, Faction.COALITION, null);
+        h.runAfterDelay(5, () -> shoot(h, a, buggy.getBoundingBox().getCenter(), GunType.AR17, 10));
+        h.runAtTickTime(40, () -> {
+            float lost = buggy.maxHealth() - buggy.health();
+            h.assertTrue(lost > 5f, "rifles should hurt a light vehicle, lost " + lost);
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = ARENA, timeoutTicks = 80)
+    public static void crewBailsOutOfBurningVehicle(GameTestHelper h) {
+        com.ditsjohann.warfront.entity.BuggyEntity buggy = com.ditsjohann.warfront.entity.BuggyEntity.spawn(h.getLevel(), h.absolutePos(new BlockPos(16, 1, 16)), Faction.LEGION, null);
+        SoldierEntity driver = soldier(h, 16, 18, Faction.LEGION, null);
+        driver.startRiding(buggy, true);
+        h.runAfterDelay(5, () -> buggy.damageVehicle(buggy.maxHealth() - buggy.disabledAt() + 1, null, "test"));
+        h.succeedWhen(() -> {
+            h.assertTrue(buggy.disabled(), "buggy should be disabled");
+            h.assertTrue(!driver.isPassenger(), "AI crew should bail out of a burning vehicle");
+        });
+    }
+
+    @GameTest(template = ARENA, timeoutTicks = 20)
+    public static void attachmentsUnlockByWeaponKills(GameTestHelper h) {
+        h.assertTrue(!Attachment.HOLO.unlockedFor(GunType.AR17, 9), "holo needs 10 kills");
+        h.assertTrue(Attachment.HOLO.unlockedFor(GunType.AR17, 10), "holo unlocks at 10 kills");
+        h.assertTrue(Attachment.SNIPER_8X.unlockedFor(GunType.SR338, 0), "factory optic is always available");
+        Loadout wanted = new Loadout(Attachment.PRISM_4X, Attachment.SUPPRESSOR, Attachment.VERTICAL_GRIP);
+        Loadout fresh = com.ditsjohann.warfront.match.Deployment.sanitize(GunType.AR17, wanted, 3, false);
+        h.assertTrue(fresh.optic() == Attachment.RED_DOT && fresh.muzzle() == Attachment.NO_MUZZLE && fresh.underbarrel() == Attachment.VERTICAL_GRIP,
+                "server must strip locked attachments: " + fresh);
+        Loadout vet = com.ditsjohann.warfront.match.Deployment.sanitize(GunType.AR17, wanted, 100, false);
+        h.assertTrue(vet.equals(wanted), "veteran keeps the full loadout");
+        h.succeed();
+    }
+
+    @GameTest(template = ARENA, timeoutTicks = 120)
+    public static void smokeBlindsSoldiers(GameTestHelper h) {
+        Vec3 mid = Vec3.atCenterOf(h.absolutePos(new BlockPos(16, 2, 16)));
+        com.ditsjohann.warfront.combat.SmokeScreens.add(h.getLevel(), mid, 5f, 200);
+        h.assertTrue(com.ditsjohann.warfront.combat.SmokeScreens.blocks(h.getLevel(), mid.add(-10, 0, 0), mid.add(10, 0, 0)), "smoke should block a line through it");
+        h.assertTrue(!com.ditsjohann.warfront.combat.SmokeScreens.blocks(h.getLevel(), mid.add(-10, 0, 9), mid.add(10, 0, 9)), "smoke shouldn't block a line beside it");
+        SoldierEntity watcher = SoldierEntity.spawn(h.getLevel(), h.absolutePos(new BlockPos(6, 1, 16)), Faction.COALITION, SoldierRole.ASSAULT, -1, null);
+        SoldierEntity hidden = soldier(h, 26, 16, Faction.LEGION, null);
+        h.runAtTickTime(60, () -> {
+            h.assertTrue(watcher.getTarget() != hidden, "soldier saw through the smoke");
+            h.succeed();
+        });
+    }
+
+    @GameTest(template = ARENA, timeoutTicks = 200, batch = "conquest_depot")
+    public static void fuelDepotChainReaction(GameTestHelper h) {
+        ConquestMatch m = match(h, 1);
+        BlockPos tankA = new BlockPos(12, 3, 16), tankB = new BlockPos(20, 3, 16);
+        h.setBlock(tankA, Blocks.WHITE_CONCRETE);
+        h.setBlock(tankB, Blocks.WHITE_CONCRETE);
+        m.fuelTanks.add(h.absolutePos(tankA));
+        m.fuelTanks.add(h.absolutePos(tankB));
+        m.depotPos = h.absolutePos(new BlockPos(16, 3, 16));
+        m.damageDepot(h.getLevel(), 100, null);
+        h.assertTrue(m.depotDestroyed, "depot should be marked destroyed");
+        h.runAtTickTime(60, () -> {
+            h.assertBlockPresent(Blocks.AIR, tankA);
+            h.assertTrue(!com.ditsjohann.warfront.combat.SmokeScreens.active(h.getLevel()).isEmpty(), "depot should leave a smoke screen");
+            endMatch(h);
+            h.succeed();
+        });
+    }
+
     private WarfrontGameTests() {}
 }

@@ -16,10 +16,10 @@ public record MatchSnapshot(
         boolean active, int state, int timer, int ticketsA, int ticketsB, int maxTickets,
         List<Flag> flags, BlockPos hqA, BlockPos hqB, List<Beacon> beacons,
         BlockPos towerPos, int towerIntegrity, boolean towerCollapsed, int uplinkFaction,
-        List<Entry> players, int winner, int minX, int minZ, int maxX, int maxZ, int aliveA, int aliveB) {
+        List<Entry> players, int winner, int minX, int minZ, int maxX, int maxZ, int aliveA, int aliveB, BlockPos depotPos, boolean depotDestroyed) {
 
     public static final MatchSnapshot NONE = new MatchSnapshot(false, 0, 0, 0, 0, 0, List.of(), BlockPos.ZERO, BlockPos.ZERO,
-            List.of(), BlockPos.ZERO, 0, false, -1, List.of(), -1, 0, 0, 0, 0, 0, 0);
+            List.of(), BlockPos.ZERO, 0, false, -1, List.of(), -1, 0, 0, 0, 0, 0, 0, BlockPos.ZERO, false);
 
     public record Flag(char letter, BlockPos pos, int radius, float control, int owner, int countA, int countB) {
         public boolean contested() { return countA > 0 && countB > 0; }
@@ -78,6 +78,8 @@ public record MatchSnapshot(
         b.writeInt(s.maxZ);
         b.writeVarInt(s.aliveA);
         b.writeVarInt(s.aliveB);
+        b.writeBlockPos(s.depotPos);
+        b.writeBoolean(s.depotDestroyed);
     }
 
     private static MatchSnapshot read(FriendlyByteBuf b) {
@@ -103,6 +105,6 @@ public record MatchSnapshot(
         }
         int winner = b.readVarInt() - 1;
         return new MatchSnapshot(true, state, timer, ta, tb, max, flags, hqA, hqB, beacons, tower, integrity, collapsed, uplink,
-                players, winner, b.readInt(), b.readInt(), b.readInt(), b.readInt(), b.readVarInt(), b.readVarInt());
+                players, winner, b.readInt(), b.readInt(), b.readInt(), b.readInt(), b.readVarInt(), b.readVarInt(), b.readBlockPos(), b.readBoolean());
     }
 }

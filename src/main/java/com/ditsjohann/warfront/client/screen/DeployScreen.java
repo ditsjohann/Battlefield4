@@ -189,7 +189,14 @@ public class DeployScreen extends Screen {
             if (hover) g.renderTooltip(font, font.split(Component.literal(slot.name() + ": " + a.describe() + "  (click to cycle)"), 160), mx, my);
             y += 21;
         }
-        y += 4;
+        int wk = ClientState.progress.weaponKills(gt);
+        Attachment next = null;
+        for (Attachment a : Attachment.values()) {
+            if (gt.allows(a) && !a.unlockedFor(gt, wk) && (next == null || a.killsRequired < next.killsRequired)) next = a;
+        }
+        String mastery = next == null ? wk + " kills - all unlocked" : "Next: " + next.label + " (" + wk + "/" + next.killsRequired + ")";
+        g.drawString(font, mastery, x, y, next == null ? 0xFF7FFF7F : UiKit.DIM, false);
+        y += 12;
         var st = gt.stats;
         UiKit.bar(g, font, "Damage", st.damageMax * st.pellets / 19f, x, y, RW);
         y += 11;
@@ -222,7 +229,7 @@ public class DeployScreen extends Screen {
             case ASSAULT -> List.of("Medic Bag x2", "Defibrillator", "Frag Grenade x2", "P-12 Hornet", "Sandbags x12");
             case ENGINEER -> List.of("RL-4 Breacher x5", "Repair Tool", "Frag Grenade", "P-12 Hornet", "Sandbags x24");
             case SUPPORT -> List.of("Ammo Bag x2", "C4 x3", "Frag Grenade x2", "P-12 Hornet", "Sandbags x12");
-            case RECON -> List.of("Spawn Beacon", "Field Binoculars", "Frag Grenade", "P-12 Hornet", "Sandbags x12");
+            case RECON -> List.of("Spawn Beacon", "Field Binoculars", "Smoke Grenade x2", "P-12 Hornet", "Sandbags x12");
         };
     }
 
@@ -277,6 +284,11 @@ public class DeployScreen extends Screen {
             int[] s = toScreen(m.towerPos());
             g.fill(s[0] - 3, s[1] - 3, s[0] + 3, s[1] + 3, m.towerCollapsed() ? 0xFF505050 : 0xFFE0A020);
             g.drawString(font, m.towerCollapsed() ? "RUINS" : "TOWER", s[0] + 5, s[1] - 4, UiKit.DIM, false);
+        }
+        if (!m.depotPos().equals(BlockPos.ZERO)) {
+            int[] s = toScreen(m.depotPos());
+            g.fill(s[0] - 3, s[1] - 3, s[0] + 3, s[1] + 3, m.depotDestroyed() ? 0xFF505050 : 0xFFD83A2E);
+            g.drawString(font, m.depotDestroyed() ? "SMOKE" : "FUEL", s[0] + 5, s[1] - 4, UiKit.DIM, false);
         }
         List<Spawn> spawns = spawns();
         for (MatchSnapshot.Flag f : m.flags()) {
@@ -404,7 +416,7 @@ public class DeployScreen extends Screen {
         int i = opts.indexOf(l.get(slot));
         for (int step = 1; step <= opts.size(); step++) {
             Attachment next = opts.get(Math.floorMod(i + dir * step, opts.size()));
-            if (unlocked(next.rankRequired)) {
+            if (creative() || next.unlockedFor(gt, ClientState.progress.weaponKills(gt))) {
                 LOADOUT.put(gt, l.with(next));
                 return;
             }

@@ -10,8 +10,15 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 public class FragGrenadeItem extends GadgetItem {
+    private final boolean smoke;
+
     public FragGrenadeItem() {
-        super(2, "Right-click to throw. 3 second fuse. Bounces and rolls.");
+        this(false);
+    }
+
+    public FragGrenadeItem(boolean smoke) {
+        super(2, smoke ? "Right-click to throw. Pops a smoke screen that blocks sight and spotting." : "Right-click to throw. 3 second fuse. Bounces and rolls.");
+        this.smoke = smoke;
     }
 
     @Override
@@ -20,7 +27,7 @@ public class FragGrenadeItem extends GadgetItem {
         if (charges(s) <= 0 && !p.getAbilities().instabuild) return InteractionResultHolder.fail(s);
         if (level instanceof ServerLevel sl && consume(p, s)) {
             Vec3 v = p.getLookAngle().scale(1.15).add(p.getDeltaMovement().multiply(1, 0, 1));
-            FragGrenadeEntity.throwFrom(sl, p, p.getEyePosition(), v.add(0, 0.12, 0), 60);
+            FragGrenadeEntity.throwFrom(sl, p, p.getEyePosition(), v.add(0, 0.12, 0), smoke ? 30 : 60, smoke);
             p.getCooldowns().addCooldown(this, 20);
         }
         p.swing(hand, true);

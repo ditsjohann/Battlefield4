@@ -3,7 +3,7 @@ package com.ditsjohann.warfront.client;
 import com.ditsjohann.warfront.client.render.FirstPersonGun;
 import com.ditsjohann.warfront.combat.Faction;
 import com.ditsjohann.warfront.entity.SoldierEntity;
-import com.ditsjohann.warfront.entity.TankEntity;
+import com.ditsjohann.warfront.entity.VehicleEntity;
 import com.ditsjohann.warfront.item.GadgetItem;
 import com.ditsjohann.warfront.match.ConquestMatch;
 import com.ditsjohann.warfront.match.MatchSnapshot;
@@ -382,9 +382,9 @@ public final class HudRenderer {
             for (Entity e : mc.level.entitiesForRendering()) {
                 if (e == p || !e.isAlive()) continue;
                 Faction f = com.ditsjohann.warfront.combat.Teams.of(e);
-                boolean vehicle = e instanceof TankEntity;
+                boolean vehicle = e instanceof VehicleEntity;
                 if (f == null || !(e instanceof SoldierEntity || e instanceof Player || vehicle)) continue;
-                if (e.getVehicle() instanceof TankEntity) continue;
+                if (e.getVehicle() instanceof VehicleEntity) continue;
                 boolean friendly = mine != null && f == mine;
                 boolean visible = friendly || e.isCurrentlyGlowing() || ClientState.REVEALED.containsKey(e.getId());
                 if (!visible) continue;
@@ -531,10 +531,10 @@ public final class HudRenderer {
     }
 
     private static void drawTankHud(GuiGraphics g, Font font, LocalPlayer p, int w, int h) {
-        if (!(p.getVehicle() instanceof TankEntity t)) return;
+        if (!(p.getVehicle() instanceof VehicleEntity t)) return;
         int cx = w / 2, cy = h / 2;
         // reticle
-        int col = t.reloadTicks() > 0 ? 0xAAFF8040 : 0xEE7FFF7F;
+        int col = t.weaponReadiness() < 0.999f ? 0xAAFF8040 : 0xEE7FFF7F;
         g.fill(cx - 14, cy, cx - 4, cy + 1, col);
         g.fill(cx + 5, cy, cx + 15, cy + 1, col);
         g.fill(cx, cy + 5, cx + 1, cy + 15, col);
@@ -542,20 +542,23 @@ public final class HudRenderer {
         drawHitMarker(g, cx, cy);
         int pw = 150, ph = 50, px = w - pw - 8, py = h - ph - 8;
         panel(g, px, py, pw, ph);
-        g.drawString(font, "MBT-9 JUGGERNAUT", px + 6, py + 5, DIM, false);
-        float hp = t.health() / TankEntity.MAX_HEALTH;
+        g.drawString(font, t.vehicleName().toUpperCase(), px + 6, py + 5, DIM, false);
+        float hp = t.health() / t.maxHealth();
         String hs = Math.round(hp * 100) + "%";
         g.pose().pushPose();
         g.pose().translate(px + 6, py + 16, 0);
         g.pose().scale(2f, 2f, 1);
         g.drawString(font, hs, 0, 0, t.disabled() ? 0xFFFF4A3A : WHITE, true);
         g.pose().popPose();
-        String state = t.disabled() ? "DISABLED" : t.reloadTicks() > 0 ? "LOADING" : "CANNON READY";
-        g.drawString(font, state, px + pw - 6 - font.width(state), py + 18, t.disabled() ? 0xFFFF4A3A : t.reloadTicks() > 0 ? ACCENT : 0xFF7FFF7F, true);
-        float rl = 1f - t.reloadTicks() / (float) TankEntity.CANNON_RELOAD;
+        String state = t.weaponStatus();
+        boolean ready = t.weaponReadiness() >= 0.999f || state.endsWith("READY");
+        g.drawString(font, state, px + pw - 6 - font.width(state), py + 18, t.disabled() ? 0xFFFF4A3A : ready ? 0xFF7FFF7F : ACCENT, true);
+        float rl = t.weaponReadiness();
         g.fill(px + 6, py + ph - 9, px + pw - 6, py + ph - 6, 0x55FFFFFF);
         g.fill(px + 6, py + ph - 9, px + 6 + Math.round((pw - 12) * rl), py + ph - 6, ACCENT);
-        g.drawString(font, "LMB cannon  RMB coax", px + 6, py + 32, 0xFF7FA8C0, false);
+        boolean gunner = t.seatOf(p) == t.gunnerSeat();
+        String help = !gunner ? "WASD to drive" : t instanceof com.ditsjohann.warfront.entity.TankEntity ? "LMB cannon  RMB coax" : "LMB fire HMG";
+        g.drawString(font, help, px + 6, py + 32, 0xFF7FA8C0, false);
         // hull vs turret indicator
         int ix = px - 34, iy = py + ph / 2;
         g.fill(ix - 10, iy - 14, ix + 10, iy + 14, PANEL);

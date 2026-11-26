@@ -4,7 +4,7 @@ import com.ditsjohann.warfront.WarfrontConfig;
 import com.ditsjohann.warfront.combat.DownedState;
 import com.ditsjohann.warfront.combat.Faction;
 import com.ditsjohann.warfront.combat.Spotting;
-import com.ditsjohann.warfront.entity.TankEntity;
+import com.ditsjohann.warfront.entity.VehicleEntity;
 import com.ditsjohann.warfront.match.BattlefieldGenerator;
 import com.ditsjohann.warfront.match.ConquestMatch;
 import com.ditsjohann.warfront.match.Deployment;
@@ -60,8 +60,15 @@ public final class ServerPacketHandler {
                     else WarfrontNet.toPlayer(p, new SimplePackets.Score(0, "RETURN TO HQ TO CHANGE LOADOUT"));
                 }
             }
+            case SimplePackets.Action.AIM_ON -> com.ditsjohann.warfront.combat.ScopeGlint.aim(p, true);
+            case SimplePackets.Action.AIM_OFF -> com.ditsjohann.warfront.combat.ScopeGlint.aim(p, false);
             default -> {}
         }
+    }
+
+    static void squadCommand(SimplePackets.SquadCommand m, ServerPlayer p) {
+        ConquestMatch match = MatchManager.active(p.serverLevel());
+        if (match != null) match.command(p.serverLevel(), p, m.command(), m.arg());
     }
 
     static void deploy(SimplePackets.Deploy m, ServerPlayer p) {
@@ -110,13 +117,7 @@ public final class ServerPacketHandler {
     }
 
     static void vehicle(SimplePackets.VehicleInput m, ServerPlayer p) {
-        if (!(p.getVehicle() instanceof TankEntity tank) || tank.getControllingPassenger() != p) return;
-        switch (m.action()) {
-            case 0 -> tank.fireCannon(p.serverLevel(), p);
-            case 1 -> tank.setCoax(true);
-            case 2 -> tank.setCoax(false);
-            default -> {}
-        }
+        if (p.getVehicle() instanceof VehicleEntity v) v.handleInput(p, m.action());
     }
 
     private ServerPacketHandler() {}

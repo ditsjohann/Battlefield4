@@ -1,7 +1,7 @@
 package com.ditsjohann.warfront.item;
 
 import com.ditsjohann.warfront.entity.C4Entity;
-import com.ditsjohann.warfront.entity.TankEntity;
+import com.ditsjohann.warfront.entity.VehicleEntity;
 import com.ditsjohann.warfront.registry.ModSounds;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
@@ -45,7 +45,7 @@ public class C4Item extends GadgetItem {
         if (level instanceof ServerLevel sl) {
             // planting on a vehicle we are looking at
             Vec3 eye = p.getEyePosition(), end = eye.add(p.getLookAngle().scale(3.5));
-            for (TankEntity t : sl.getEntitiesOfClass(TankEntity.class, p.getBoundingBox().inflate(4))) {
+            for (VehicleEntity t : sl.getEntitiesOfClass(VehicleEntity.class, p.getBoundingBox().inflate(4))) {
                 var hit = t.getBoundingBox().clip(eye, end);
                 if (hit.isPresent() && !p.isSecondaryUseActive() && (charges(s) > 0 || p.getAbilities().instabuild) && consume(p, s)) {
                     C4Entity.place(sl, p, hit.get(), net.minecraft.core.Direction.UP, t);

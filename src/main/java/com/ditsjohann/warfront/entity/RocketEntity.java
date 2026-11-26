@@ -108,14 +108,14 @@ public class RocketEntity extends Projectile {
     protected boolean canHitEntity(Entity e) {
         Entity owner = getOwner();
         if (owner != null && (e == owner || e == owner.getVehicle() || owner.getVehicle() != null && e.getVehicle() == owner.getVehicle())) return false;
-        return super.canHitEntity(e) || e instanceof TankEntity;
+        return super.canHitEntity(e) || e instanceof VehicleEntity;
     }
 
     private void impact(HitResult hit) {
         ServerLevel level = (ServerLevel) level();
         Kind k = kind();
         Vec3 at = hit.getLocation();
-        if (hit instanceof EntityHitResult eh && eh.getEntity() instanceof TankEntity tank && Teams.canHurt(getOwner(), tank)) {
+        if (hit instanceof EntityHitResult eh && eh.getEntity() instanceof VehicleEntity tank && Teams.canHurt(getOwner(), tank)) {
             tank.damageVehicle(k.armourDamage, getOwner(), k.weapon);
         }
         discard();

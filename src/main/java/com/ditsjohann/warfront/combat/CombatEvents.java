@@ -37,7 +37,7 @@ import java.util.WeakHashMap;
  */
 @Mod.EventBusSubscriber(modid = Warfront.MODID)
 public final class CombatEvents {
-    private record WeaponRecord(String weapon, boolean headshot, long time) {}
+    private record WeaponRecord(String weapon, boolean headshot, long time, @Nullable GunType gun) {}
 
     private static final Map<UUID, WeaponRecord> LAST_WEAPON = new HashMap<>();
     /** victim -> (attacker -> damage) for assists. */
@@ -46,11 +46,11 @@ public final class CombatEvents {
     private static final Map<Entity, Boolean> COUNTED = new WeakHashMap<>();
 
     public static void recordWeapon(Entity target, GunType gun, boolean headshot) {
-        LAST_WEAPON.put(target.getUUID(), new WeaponRecord(gun.displayName, headshot, target.level().getGameTime()));
+        LAST_WEAPON.put(target.getUUID(), new WeaponRecord(gun.displayName, headshot, target.level().getGameTime(), gun));
     }
 
     public static void recordWeapon(Entity target, String weapon) {
-        LAST_WEAPON.put(target.getUUID(), new WeaponRecord(weapon, false, target.level().getGameTime()));
+        LAST_WEAPON.put(target.getUUID(), new WeaponRecord(weapon, false, target.level().getGameTime(), null));
     }
 
     public static boolean isDowned(LivingEntity e) {
@@ -147,7 +147,7 @@ public final class CombatEvents {
         ConquestMatch match = MatchManager.active(level);
         if (match != null && vf != null) match.onCombatantLost(level, victim, vf);
         String killerName = killer == null ? "" : killer.getDisplayName().getString();
-        if (killer != null && killer.getVehicle() instanceof com.ditsjohann.warfront.entity.TankEntity && weapon.equals("Melee")) weapon = "MBT-9 Juggernaut";
+        if (killer != null && killer.getVehicle() instanceof com.ditsjohann.warfront.entity.VehicleEntity v && (weapon.equals("Melee") || weapon.equals("Roadkill"))) weapon = v.vehicleName();
         SimplePackets.KillFeed feed = new SimplePackets.KillFeed(killerName, kf == null ? -1 : kf.ordinal(),
                 victim.getDisplayName().getString(), vf == null ? -1 : vf.ordinal(), weapon, headshot);
         for (ServerPlayer p : level.players()) {
@@ -160,6 +160,7 @@ public final class CombatEvents {
             if (headshot) Scoring.award(sp, 25, "HEADSHOT BONUS");
             Scoring.countKill(sp);
             if (match != null) match.addKill(sp);
+            if (wr != null && wr.gun() != null && weapon.equals(wr.weapon())) Scoring.countWeaponKill(sp, wr.gun());
         }
         if (log != null) {
             float total = 0;

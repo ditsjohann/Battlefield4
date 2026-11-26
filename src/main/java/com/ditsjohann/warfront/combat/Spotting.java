@@ -56,6 +56,7 @@ public final class Spotting {
             double score = dot + Math.min(0.02, 2.0 / Math.max(dist, 1) * 0.01);
             if (score <= bestDot) continue;
             if (level.clip(new ClipContext(eye, c, ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, spotter)).getType() != HitResult.Type.MISS) continue;
+            if (SmokeScreens.blocks(level, eye, c)) continue; // smoke blocks spotting
             bestDot = score;
             best = e;
         }
@@ -69,7 +70,7 @@ public final class Spotting {
             le.addEffect(new MobEffectInstance(MobEffects.GLOWING, SPOT_TICKS, 0, false, false));
         } else {
             target.setGlowingTag(true);
-            if (target instanceof com.ditsjohann.warfront.entity.TankEntity t) t.spottedUntil = level.getGameTime() + SPOT_TICKS;
+            if (target instanceof com.ditsjohann.warfront.entity.VehicleEntity t) t.spottedUntil = level.getGameTime() + SPOT_TICKS;
         }
         if (by != null) {
             SPOTS.put(target.getUUID(), new Spot(by.getUUID(), level.getGameTime()));

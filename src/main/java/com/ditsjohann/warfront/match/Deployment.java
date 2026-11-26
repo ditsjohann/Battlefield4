@@ -56,7 +56,7 @@ public final class Deployment {
         int rank = PlayerProgress.rank(p);
         GunType gun = GunType.byId(req.gun());
         if (!kit.primaries.contains(gun) || (gun.rankRequired > rank && !p.isCreative())) gun = kit.primaries.get(0);
-        Loadout l = sanitize(gun, req.loadout(), rank, p.isCreative());
+        Loadout l = sanitize(gun, req.loadout(), PlayerProgress.weaponKills(p, gun), p.isCreative());
         DownedState.clear(p, false);
         stripKit(p);
         giveKit(p, kit, gun, l);
@@ -101,11 +101,11 @@ public final class Deployment {
         }
     }
 
-    public static Loadout sanitize(GunType gun, Loadout l, int rank, boolean creative) {
+    public static Loadout sanitize(GunType gun, Loadout l, int weaponKills, boolean creative) {
         Loadout out = gun.defaultLoadout();
         for (Attachment.Slot slot : Attachment.Slot.values()) {
             Attachment a = l.get(slot);
-            if (a.slot == slot && gun.allows(a) && (creative || a.rankRequired <= rank)) out = out.with(a);
+            if (a.slot == slot && gun.allows(a) && (creative || a.unlockedFor(gun, weaponKills))) out = out.with(a);
         }
         return out;
     }
@@ -134,7 +134,7 @@ public final class Deployment {
             case RECON -> {
                 give(p, charged(ModItems.SPAWN_BEACON, 1));
                 give(p, new ItemStack(ModItems.FIELD_BINOCULARS.get()));
-                give(p, charged(ModItems.FRAG_GRENADE, 1));
+                give(p, charged(ModItems.SMOKE_GRENADE, 2));
             }
         }
         ItemStack bags = new ItemStack(ModItems.SANDBAG.get(), kit == Kit.ENGINEER ? 24 : 12);

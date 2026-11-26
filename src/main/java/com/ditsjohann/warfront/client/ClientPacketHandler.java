@@ -79,6 +79,11 @@ public final class ClientPacketHandler {
         ClientState.announcement = new ClientState.Announcement(a.title(), a.subtitle(), a.style(), ClientState.now());
     }
 
+    public static void glint(SimplePackets.Glint g) {
+        if (g.on()) ClientState.GLINTING.add(g.entityId());
+        else ClientState.GLINTING.remove(g.entityId());
+    }
+
     public static void match(MatchSnapshot s) {
         ClientState.match = s;
     }

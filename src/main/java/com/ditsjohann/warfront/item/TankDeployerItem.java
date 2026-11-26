@@ -9,10 +9,13 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.context.UseOnContext;
 
-/** Sandbox item: airdrops an MBT-9 tank for your side. */
+/** Sandbox item: airdrops a vehicle (MBT-9 tank or FAV-3 buggy) for your side. */
 public class TankDeployerItem extends Item {
-    public TankDeployerItem() {
+    private final boolean buggy;
+
+    public TankDeployerItem(boolean buggy) {
         super(new Item.Properties().stacksTo(1));
+        this.buggy = buggy;
     }
 
     @Override
@@ -20,7 +23,9 @@ public class TankDeployerItem extends Item {
         if (!(ctx.getLevel() instanceof ServerLevel sl)) return InteractionResult.SUCCESS;
         Player p = ctx.getPlayer();
         Faction f = Teams.of(p);
-        TankEntity t = TankEntity.spawn(sl, ctx.getClickedPos().above(), f == null ? Faction.COALITION : f, null);
+        com.ditsjohann.warfront.entity.VehicleEntity t = buggy
+                ? com.ditsjohann.warfront.entity.BuggyEntity.spawn(sl, ctx.getClickedPos().above(), f == null ? Faction.COALITION : f, null)
+                : TankEntity.spawn(sl, ctx.getClickedPos().above(), f == null ? Faction.COALITION : f, null);
         if (t != null && p != null) {
             t.setYRot(p.getYRot());
             if (!p.getAbilities().instabuild) ctx.getItemInHand().shrink(1);

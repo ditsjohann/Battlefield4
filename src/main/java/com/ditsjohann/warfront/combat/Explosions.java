@@ -94,6 +94,10 @@ public final class Explosions {
             double dy = c.y - tb.getY();
             if (dx < 3 && dz < 3 && dy > -3 && dy < 10) m.damageTower(level, ctx.towerDamage, ctx.owner);
         }
+        if (m != null && m.depotPos != null && !m.depotDestroyed && ctx.towerDamage > 0) {
+            Vec3 c = event.getExplosion().center();
+            if (c.distanceTo(Vec3.atCenterOf(m.depotPos)) < 7.5) m.damageDepot(level, ctx.towerDamage + 2, ctx.owner);
+        }
     }
 
     private Explosions() {}

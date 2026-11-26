@@ -1,11 +1,12 @@
 package com.ditsjohann.warfront.entity.ai;
 
 import com.ditsjohann.warfront.combat.CombatEvents;
+import com.ditsjohann.warfront.combat.SmokeScreens;
 import com.ditsjohann.warfront.combat.Spotting;
 import com.ditsjohann.warfront.combat.Teams;
 import com.ditsjohann.warfront.entity.SoldierEntity;
 import com.ditsjohann.warfront.entity.SoldierRole;
-import com.ditsjohann.warfront.entity.TankEntity;
+import com.ditsjohann.warfront.entity.VehicleEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -33,11 +34,11 @@ public class SoldierTargetGoal extends TargetGoal {
 
     public static boolean validTarget(SoldierEntity s, Entity e) {
         if (!e.isAlive() || e == s) return false;
-        if (e instanceof TankEntity t) return Teams.enemies(s, t) && t.hasCrew();
+        if (e instanceof VehicleEntity t) return Teams.enemies(s, t) && t.hasCrew();
         if (!(e instanceof LivingEntity le)) return false;
         if (le instanceof Player p && (p.isCreative() || p.isSpectator())) return false;
         if (CombatEvents.isDowned(le)) return false;
-        if (le.getVehicle() instanceof TankEntity) return false; // shoot the tank, not its crew
+        if (le.getVehicle() instanceof VehicleEntity) return false; // shoot the tank, not its crew
         if (Teams.enemies(s, le)) return true;
         return le instanceof Enemy && s.distanceToSqr(le) < 28 * 28;
     }
@@ -59,10 +60,10 @@ public class SoldierTargetGoal extends TargetGoal {
         double bestScore = Double.MAX_VALUE;
         boolean antiArmour = soldier.getRole() == SoldierRole.ENGINEER && soldier.rockets > 0;
         for (Entity e : soldier.level().getEntities(soldier, box, e -> validTarget(soldier, e))) {
-            if (e instanceof TankEntity t) {
+            if (e instanceof VehicleEntity t) {
                 if (!antiArmour) continue;
                 double d = soldier.distanceTo(t);
-                if (d < 80 && soldier.getSensing().hasLineOfSight(t)) {
+                if (d < 80 && soldier.getSensing().hasLineOfSight(t) && !SmokeScreens.blocks(soldier.level(), soldier.getEyePosition(), t.getBoundingBox().getCenter())) {
                     double score = d * 0.4; // armour is the engineer's priority
                     if (score < bestScore && t.getControllingPassenger() instanceof LivingEntity crew) {
                         // target the vehicle by proxy: the combat goal reads the vehicle from the crew
@@ -75,7 +76,7 @@ public class SoldierTargetGoal extends TargetGoal {
             LivingEntity le = (LivingEntity) e;
             double d = soldier.distanceTo(le);
             if (d > range) continue;
-            if (!soldier.getSensing().hasLineOfSight(le)) continue;
+            if (!soldier.getSensing().hasLineOfSight(le) || SmokeScreens.blocks(soldier.level(), soldier.getEyePosition(), le.getEyePosition())) continue;
             double score = d;
             if (Spotting.isSpotted(le)) score *= 0.7;
             if (le == attacker) score *= 0.4;

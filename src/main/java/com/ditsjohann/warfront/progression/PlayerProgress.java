@@ -26,6 +26,19 @@ public final class PlayerProgress {
     public static int xp(Player p) { return data(p).getInt("xp"); }
     public static int rank(Player p) { return Ranks.rankFor(xp(p)); }
 
+    public static int weaponKills(Player p, com.ditsjohann.warfront.weapon.GunType gun) {
+        return data(p).getInt("wk_" + gun.id);
+    }
+
+    public static java.util.Map<String, Integer> allWeaponKills(Player p) {
+        java.util.Map<String, Integer> out = new java.util.HashMap<>();
+        for (com.ditsjohann.warfront.weapon.GunType g : com.ditsjohann.warfront.weapon.GunType.values()) {
+            int k = weaponKills(p, g);
+            if (k > 0) out.put(g.id, k);
+        }
+        return out;
+    }
+
     public static void add(Player p, String stat, int amount) {
         CompoundTag d = data(p);
         d.putInt(stat, d.getInt(stat) + amount);
@@ -33,7 +46,7 @@ public final class PlayerProgress {
 
     public static void sync(ServerPlayer p) {
         CompoundTag d = data(p);
-        WarfrontNet.toPlayer(p, new SimplePackets.Progress(d.getInt("xp"), rank(p), d.getInt("kills"), d.getInt("deaths"), d.getInt("wins"), d.getInt("matches")));
+        WarfrontNet.toPlayer(p, new SimplePackets.Progress(d.getInt("xp"), rank(p), d.getInt("kills"), d.getInt("deaths"), d.getInt("wins"), d.getInt("matches"), allWeaponKills(p)));
     }
 
     @SubscribeEvent

@@ -22,15 +22,20 @@ Inspired by the design of Battlefield 4. All names, models, textures and sounds 
   anti-tank rockets, medics who revive you, and recon spotting.
 - **Your squad**: an AI fireteam follows you. Spot a flag to order it to attack or defend.
 - **Kits & gadgets**: Assault (medic bag, defibrillator), Engineer (rockets, repair tool),
-  Support (ammo bag, C4), Recon (spawn beacon, spotting binoculars). Everyone carries sandbags
+  Support (ammo bag, C4), Recon (spawn beacon, spotting binoculars, smoke). Everyone carries sandbags
   to fortify.
+- **FAV-3 Jackal buggy**: fast two-seater with a rear heavy machine gun that overheats. Hop into an
+  AI buggy and you drive while the AI crew mans the gun.
 - **MBT-9 Juggernaut tank**: turret follows your view, main cannon plus coax MG, armour model
   with a disabled/burning state, engineer repairs, crushes fences and trees, AI tank crews.
 - **Levolution**: blow the Comms Tower's base and it collapses onto the centre flag, cutting the
-  radar uplink for good.
+  radar uplink for good. Ignite the fuel depot by flag B and it smothers the flag in smoke that
+  blinds AI and spotting.
+- **Squad orders radial**: hold V to order attack/defend/follow/hold, or call for a medic or ammo.
+- **Weapon mastery**: kills with a gun unlock its attachments. Scope glint gives snipers away.
 - **BF-style HUD**: minimap, Conquest bar, kill feed, score popups, hit markers, deploy screen
   with a tactical map, and a downed/revive state.
-- **Progression**: 14 ranks and career stats.
+- **Progression**: 14 ranks, career stats and per-weapon attachment unlocks.
 
 ## Controls (defaults, rebindable)
 | Action | Key |
@@ -39,10 +44,12 @@ Inspired by the design of Battlefield 4. All names, models, textures and sounds 
 | Reload | R |
 | Fire mode | B |
 | Spot enemy / order squad to the flag you look at | Z |
+| Squad orders radial (hold) | V |
 | Deploy screen (at HQ or when dead) | J |
 | Battle scoreboard | Tab |
 | Give up while downed | hold Space |
 | Tank: cannon / coax MG / drive | LMB / RMB / WASD |
+| Buggy gunner: fire HMG | LMB |
 
 ## Playing
 1. Craft a **War Table** (map, paper, compass, logs) or take one from the WARFRONT creative tab.

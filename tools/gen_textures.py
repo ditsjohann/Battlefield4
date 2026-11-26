@@ -453,6 +453,16 @@ def gen_icons():
 
     icon(grenade, "frag_grenade")
 
+    def smoke(d, px):
+        d.rectangle((5, 4, 10, 14), fill=hexc("#8a8f96"), outline=hexc("#45484d"))
+        d.rectangle((5, 7, 10, 8), fill=hexc("#e6e6e6"))
+        d.rectangle((6, 2, 9, 4), fill=hexc("#45484d"))
+        d.line((9, 3, 12, 5), fill=hexc("#9aa0a8"))
+        px[12, 2] = hexc("#d0d0d0")
+        px[13, 1] = hexc("#e0e0e0")
+
+    icon(smoke, "smoke_grenade")
+
     def medbag(d, px):
         d.rounded_rectangle((2, 4, 13, 13), 2, fill=hexc("#e6e6e6"), outline=hexc("#9a9a9a"))
         d.rectangle((6, 6, 9, 11), fill=hexc("#c22a22"))
@@ -531,6 +541,17 @@ def gen_icons():
             px[x, 13] = hexc("#222222")
 
     icon(tank_kit, "tank_deployer")
+
+    def buggy_kit(d, px):
+        d.rectangle((2, 8, 13, 11), fill=hexc("#59633b"), outline=hexc("#2a3018"))
+        d.line((4, 8, 4, 4), fill=hexc("#2b2e33"))
+        d.line((11, 8, 11, 4), fill=hexc("#2b2e33"))
+        d.line((4, 4, 11, 4), fill=hexc("#2b2e33"))
+        d.line((7, 7, 13, 5), fill=hexc("#45484d"))
+        for x in (3, 12):
+            d.ellipse((x - 2, 10, x + 2, 14), fill=hexc("#222222"))
+
+    icon(buggy_kit, "buggy_deployer")
 
     def dogtag(d, px):
         d.rounded_rectangle((4, 4, 11, 13), 2, fill=hexc("#b8bcc2"), outline=hexc("#6b6e72"))

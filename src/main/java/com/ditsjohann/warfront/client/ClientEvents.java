@@ -4,7 +4,7 @@ import com.ditsjohann.warfront.Warfront;
 import com.ditsjohann.warfront.client.render.FirstPersonGun;
 import com.ditsjohann.warfront.client.render.Tracers;
 import com.ditsjohann.warfront.client.screen.DeployScreen;
-import com.ditsjohann.warfront.entity.TankEntity;
+import com.ditsjohann.warfront.entity.VehicleEntity;
 import com.ditsjohann.warfront.network.WarfrontNet;
 import com.ditsjohann.warfront.network.packets.SimplePackets;
 import com.ditsjohann.warfront.registry.ModItems;
@@ -36,6 +36,9 @@ public final class ClientEvents {
         while (KeyBinds.SPOT.consumeClick()) WarfrontNet.toServer(new SimplePackets.Action(SimplePackets.Action.SPOT));
         while (KeyBinds.DEPLOY.consumeClick()) {
             if (ClientState.inMatch()) WarfrontNet.toServer(new SimplePackets.Action(SimplePackets.Action.OPEN_DEPLOY));
+        }
+        while (KeyBinds.ORDERS.consumeClick()) {
+            if (ClientState.inMatch() && mc.screen == null && !ClientState.downed) mc.setScreen(new com.ditsjohann.warfront.client.screen.CommoRoseScreen());
         }
         if (ClientState.deployCountdown == 0 && mc.screen == null && ClientState.inMatch()) {
             ClientState.deployCountdown = -1;
@@ -107,7 +110,10 @@ public final class ClientEvents {
 
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
-        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) Tracers.render(event);
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+            Tracers.render(event);
+            com.ditsjohann.warfront.client.render.ScopeGlintRenderer.render(event);
+        }
     }
 
     @SubscribeEvent
@@ -126,7 +132,7 @@ public final class ClientEvents {
     }
 
     static boolean inTank(LocalPlayer p) {
-        return p.getVehicle() instanceof TankEntity;
+        return p.getVehicle() instanceof VehicleEntity;
     }
 
     private ClientEvents() {}

@@ -40,12 +40,16 @@ public class SupplyBagEntity extends Projectile {
     }
 
     public static void toss(ServerLevel level, LivingEntity owner, boolean ammo) {
+        toss(level, owner, ammo, owner.getLookAngle());
+    }
+
+    public static void toss(ServerLevel level, LivingEntity owner, boolean ammo, Vec3 dir) {
         SupplyBagEntity b = new SupplyBagEntity(ModEntities.SUPPLY_BAG.get(), level);
         b.setOwner(owner);
         b.entityData.set(AMMO, ammo);
         Vec3 eye = owner.getEyePosition();
         b.setPos(eye.x, eye.y - 0.4, eye.z);
-        b.setDeltaMovement(owner.getLookAngle().scale(0.45).add(0, 0.15, 0));
+        b.setDeltaMovement(dir.normalize().scale(0.45).add(0, 0.15, 0));
         level.addFreshEntity(b);
         level.playSound(null, eye.x, eye.y, eye.z, ModSounds.get("bag_drop"), SoundSource.PLAYERS, 0.8f, 1f);
     }

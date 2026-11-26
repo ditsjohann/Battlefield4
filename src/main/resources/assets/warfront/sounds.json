@@ -1,4 +1,12 @@
 {
+  "ammo_low": {
+    "sounds": [
+      {
+        "name": "warfront:ammo_low"
+      }
+    ],
+    "subtitle": "subtitles.warfront.ammo_low"
+  },
   "bag_drop": {
     "sounds": [
       {
@@ -11,6 +19,12 @@
     "sounds": [
       {
         "name": "warfront:bullet_crack"
+      },
+      {
+        "name": "warfront:bullet_crack_v2"
+      },
+      {
+        "name": "warfront:bullet_crack_v3"
       }
     ],
     "subtitle": "subtitles.warfront.bullet_crack"
@@ -19,6 +33,12 @@
     "sounds": [
       {
         "name": "warfront:bullet_impact"
+      },
+      {
+        "name": "warfront:bullet_impact_v2"
+      },
+      {
+        "name": "warfront:bullet_impact_v3"
       }
     ],
     "subtitle": "subtitles.warfront.bullet_impact"
@@ -43,6 +63,12 @@
     "sounds": [
       {
         "name": "warfront:carbine_shot"
+      },
+      {
+        "name": "warfront:carbine_shot_v2"
+      },
+      {
+        "name": "warfront:carbine_shot_v3"
       }
     ],
     "subtitle": "subtitles.warfront.carbine_shot"
@@ -51,6 +77,14 @@
     "sounds": [
       {
         "name": "warfront:carbine_shot_far",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "warfront:carbine_shot_far_v2",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "warfront:carbine_shot_far_v3",
         "attenuation_distance": 24
       }
     ],
@@ -92,6 +126,14 @@
     "sounds": [
       {
         "name": "warfront:explosion",
+        "attenuation_distance": 64
+      },
+      {
+        "name": "warfront:explosion_v2",
+        "attenuation_distance": 64
+      },
+      {
+        "name": "warfront:explosion_v3",
         "attenuation_distance": 64
       }
     ],
@@ -142,6 +184,12 @@
     "sounds": [
       {
         "name": "warfront:grenade_explode"
+      },
+      {
+        "name": "warfront:grenade_explode_v2"
+      },
+      {
+        "name": "warfront:grenade_explode_v3"
       }
     ],
     "subtitle": "subtitles.warfront.grenade_explode"
@@ -182,6 +230,12 @@
     "sounds": [
       {
         "name": "warfront:lmg_shot"
+      },
+      {
+        "name": "warfront:lmg_shot_v2"
+      },
+      {
+        "name": "warfront:lmg_shot_v3"
       }
     ],
     "subtitle": "subtitles.warfront.lmg_shot"
@@ -191,6 +245,14 @@
       {
         "name": "warfront:lmg_shot_far",
         "attenuation_distance": 24
+      },
+      {
+        "name": "warfront:lmg_shot_far_v2",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "warfront:lmg_shot_far_v3",
+        "attenuation_distance": 24
       }
     ],
     "subtitle": "subtitles.warfront.lmg_shot_far"
@@ -199,6 +261,12 @@
     "sounds": [
       {
         "name": "warfront:pistol_shot"
+      },
+      {
+        "name": "warfront:pistol_shot_v2"
+      },
+      {
+        "name": "warfront:pistol_shot_v3"
       }
     ],
     "subtitle": "subtitles.warfront.pistol_shot"
@@ -207,6 +275,14 @@
     "sounds": [
       {
         "name": "warfront:pistol_shot_far",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "warfront:pistol_shot_far_v2",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "warfront:pistol_shot_far_v3",
         "attenuation_distance": 24
       }
     ],
@@ -264,6 +340,12 @@
     "sounds": [
       {
         "name": "warfront:rifle_shot"
+      },
+      {
+        "name": "warfront:rifle_shot_v2"
+      },
+      {
+        "name": "warfront:rifle_shot_v3"
       }
     ],
     "subtitle": "subtitles.warfront.rifle_shot"
@@ -272,6 +354,14 @@
     "sounds": [
       {
         "name": "warfront:rifle_shot_far",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "warfront:rifle_shot_far_v2",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "warfront:rifle_shot_far_v3",
         "attenuation_distance": 24
       }
     ],
@@ -305,6 +395,12 @@
     "sounds": [
       {
         "name": "warfront:shotgun_shot"
+      },
+      {
+        "name": "warfront:shotgun_shot_v2"
+      },
+      {
+        "name": "warfront:shotgun_shot_v3"
       }
     ],
     "subtitle": "subtitles.warfront.shotgun_shot"
@@ -314,6 +410,14 @@
       {
         "name": "warfront:shotgun_shot_far",
         "attenuation_distance": 24
+      },
+      {
+        "name": "warfront:shotgun_shot_far_v2",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "warfront:shotgun_shot_far_v3",
+        "attenuation_distance": 24
       }
     ],
     "subtitle": "subtitles.warfront.shotgun_shot_far"
@@ -322,6 +426,12 @@
     "sounds": [
       {
         "name": "warfront:sniper_shot"
+      },
+      {
+        "name": "warfront:sniper_shot_v2"
+      },
+      {
+        "name": "warfront:sniper_shot_v3"
       }
     ],
     "subtitle": "subtitles.warfront.sniper_shot"
@@ -330,6 +440,14 @@
     "sounds": [
       {
         "name": "warfront:sniper_shot_far",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "warfront:sniper_shot_far_v2",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "warfront:sniper_shot_far_v3",
         "attenuation_distance": 24
       }
     ],

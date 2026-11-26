@@ -3,38 +3,38 @@ package com.ditsjohann.warfront.weapon;
 /**
  * Weapon attachments. Each trades one stat for another, in the spirit of BF4 (the heavy barrel
  * tightens spread but adds recoil; the suppressor hides you from the minimap but costs range).
- * {@link #rankRequired} gates them behind progression.
+ * Like BF4, attachments unlock per weapon: {@link #killsRequired} kills with that gun.
  */
 public enum Attachment {
     // ---- optics
     IRON_SIGHTS(Slot.OPTIC, "Iron Sights", 0, 1.15f),
     RED_DOT(Slot.OPTIC, "Reflex Sight", 0, 1.35f),
-    HOLO(Slot.OPTIC, "Holo 2x", 2, 2.0f),
-    PRISM_4X(Slot.OPTIC, "Prism 4x", 4, 4.0f),
-    SNIPER_8X(Slot.OPTIC, "Hunter 8x", 0, 8.0f),
+    HOLO(Slot.OPTIC, "Holo 2x", 10, 2.0f),
+    PRISM_4X(Slot.OPTIC, "Prism 4x", 25, 4.0f),
+    SNIPER_8X(Slot.OPTIC, "Hunter 8x", 20, 8.0f),
     // ---- muzzle
     NO_MUZZLE(Slot.MUZZLE, "None", 0, 1),
-    SUPPRESSOR(Slot.MUZZLE, "Suppressor", 5, 1),
-    COMPENSATOR(Slot.MUZZLE, "Compensator", 1, 1),
-    HEAVY_BARREL(Slot.MUZZLE, "Heavy Barrel", 3, 1),
+    SUPPRESSOR(Slot.MUZZLE, "Suppressor", 60, 1),
+    COMPENSATOR(Slot.MUZZLE, "Compensator", 5, 1),
+    HEAVY_BARREL(Slot.MUZZLE, "Heavy Barrel", 35, 1),
     // ---- underbarrel
     NO_GRIP(Slot.UNDERBARREL, "None", 0, 1),
-    VERTICAL_GRIP(Slot.UNDERBARREL, "Vertical Grip", 1, 1),
-    ANGLED_GRIP(Slot.UNDERBARREL, "Angled Grip", 3, 1),
-    BIPOD(Slot.UNDERBARREL, "Bipod", 2, 1);
+    VERTICAL_GRIP(Slot.UNDERBARREL, "Vertical Grip", 3, 1),
+    ANGLED_GRIP(Slot.UNDERBARREL, "Angled Grip", 45, 1),
+    BIPOD(Slot.UNDERBARREL, "Bipod", 15, 1);
 
     public enum Slot { OPTIC, MUZZLE, UNDERBARREL }
 
     public final Slot slot;
     public final String label;
-    public final int rankRequired;
+    public final int killsRequired;
     /** For optics: FOV zoom factor while aiming. */
     public final float zoom;
 
-    Attachment(Slot slot, String label, int rankRequired, float zoom) {
+    Attachment(Slot slot, String label, int killsRequired, float zoom) {
         this.slot = slot;
         this.label = label;
-        this.rankRequired = rankRequired;
+        this.killsRequired = killsRequired;
         this.zoom = zoom;
     }
 
@@ -53,6 +53,11 @@ public enum Attachment {
             case ANGLED_GRIP -> "+60% aim speed, -20% first-shot recoil";
             case BIPOD -> "-70% recoil while crouched";
         };
+    }
+
+    /** Unlocked with enough kills on {@code gun}; a gun's factory attachments are always available. */
+    public boolean unlockedFor(GunType gun, int weaponKills) {
+        return weaponKills >= killsRequired || gun.defaultLoadout().get(slot) == this;
     }
 
     public static Attachment byOrdinal(int i) {

@@ -21,7 +21,7 @@ import java.util.function.BiConsumer;
  * {@code client.ClientPacketHandler}, so no client class is loaded on a dedicated server.
  */
 public final class WarfrontNet {
-    public static final int PROTOCOL = 1;
+    public static final int PROTOCOL = 2;
     public static final SimpleChannel CHANNEL = ChannelBuilder.named(Warfront.id("main"))
             .networkProtocolVersion(PROTOCOL)
             .simpleChannel();
@@ -37,6 +37,7 @@ public final class WarfrontNet {
         toServer(Deploy.class, Deploy.CODEC, (m, c) -> ServerPacketHandler.deploy(m, c.getSender()));
         toServer(WarTable.class, WarTable.CODEC, (m, c) -> ServerPacketHandler.warTable(m, c.getSender()));
         toServer(VehicleInput.class, VehicleInput.CODEC, (m, c) -> ServerPacketHandler.vehicle(m, c.getSender()));
+        toServer(SquadCommand.class, SquadCommand.CODEC, (m, c) -> ServerPacketHandler.squadCommand(m, c.getSender()));
         // ---- server -> client
         toClient(TracerPacket.class, TracerPacket.CODEC, (m, c) -> com.ditsjohann.warfront.client.ClientPacketHandler.tracer(m));
         toClient(HitMarker.class, HitMarker.CODEC, (m, c) -> com.ditsjohann.warfront.client.ClientPacketHandler.hitMarker(m));
@@ -49,6 +50,7 @@ public final class WarfrontNet {
         toClient(Shake.class, Shake.CODEC, (m, c) -> com.ditsjohann.warfront.client.ClientPacketHandler.shake(m));
         toClient(Downed.class, Downed.CODEC, (m, c) -> com.ditsjohann.warfront.client.ClientPacketHandler.downed(m));
         toClient(Announce.class, Announce.CODEC, (m, c) -> com.ditsjohann.warfront.client.ClientPacketHandler.announce(m));
+        toClient(Glint.class, Glint.CODEC, (m, c) -> com.ditsjohann.warfront.client.ClientPacketHandler.glint(m));
         toClient(MatchSnapshot.class, MatchSnapshot.CODEC, (m, c) -> com.ditsjohann.warfront.client.ClientPacketHandler.match(m));
         CHANNEL.build();
     }

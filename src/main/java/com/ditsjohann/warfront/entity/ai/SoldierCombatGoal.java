@@ -5,7 +5,7 @@ import com.ditsjohann.warfront.entity.FragGrenadeEntity;
 import com.ditsjohann.warfront.entity.RocketEntity;
 import com.ditsjohann.warfront.entity.SoldierEntity;
 import com.ditsjohann.warfront.entity.SoldierRole;
-import com.ditsjohann.warfront.entity.TankEntity;
+import com.ditsjohann.warfront.entity.VehicleEntity;
 import com.ditsjohann.warfront.weapon.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -89,9 +89,9 @@ public class SoldierCombatGoal extends Goal {
         LivingEntity target = s.getTarget();
         if (target == null || !target.isAlive() || s.isDowned() || s.isPassenger()) return;
         ServerLevel level = (ServerLevel) s.level();
-        Entity aimAt = target.getVehicle() instanceof TankEntity tank ? tank : target;
-        boolean vsArmour = aimAt instanceof TankEntity;
-        boolean canSee = s.getSensing().hasLineOfSight(aimAt);
+        Entity aimAt = target.getVehicle() instanceof VehicleEntity tank ? tank : target;
+        boolean vsArmour = aimAt instanceof VehicleEntity;
+        boolean canSee = s.getSensing().hasLineOfSight(aimAt) && !com.ditsjohann.warfront.combat.SmokeScreens.blocks(s.level(), s.getEyePosition(), aimAt.getEyePosition());
         long now = level.getGameTime();
         if (canSee) {
             lastSeen = aimAt.position();
@@ -218,7 +218,7 @@ public class SoldierCombatGoal extends Goal {
 
     /** Chest-height aim point with lead for target motion and compensation for bullet drop. */
     private Vec3 aimPoint(Entity t, GunType gun, double dist) {
-        double h = t instanceof TankEntity ? t.getBbHeight() * 0.5 : t.getBbHeight() * 0.68;
+        double h = t instanceof VehicleEntity ? t.getBbHeight() * 0.5 : t.getBbHeight() * 0.68;
         Vec3 p = t.position().add(0, h, 0);
         float vel = gun.stats.velocity;
         double flight = dist / vel;

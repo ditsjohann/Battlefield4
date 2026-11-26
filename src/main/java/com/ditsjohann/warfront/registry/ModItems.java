@@ -24,6 +24,7 @@ public final class ModItems {
     }
 
     public static final RegistryObject<Item> FRAG_GRENADE = REGISTER.register("frag_grenade", FragGrenadeItem::new);
+    public static final RegistryObject<Item> SMOKE_GRENADE = REGISTER.register("smoke_grenade", () -> new FragGrenadeItem(true));
     public static final RegistryObject<Item> MEDIC_BAG = REGISTER.register("medic_bag", () -> new SupplyBagItem(false));
     public static final RegistryObject<Item> AMMO_BAG = REGISTER.register("ammo_bag", () -> new SupplyBagItem(true));
     public static final RegistryObject<Item> DEFIBRILLATOR = REGISTER.register("defibrillator", DefibrillatorItem::new);
@@ -32,7 +33,8 @@ public final class ModItems {
     public static final RegistryObject<Item> C4 = REGISTER.register("c4", C4Item::new);
     public static final RegistryObject<Item> SPAWN_BEACON = REGISTER.register("spawn_beacon", SpawnBeaconItem::new);
     public static final RegistryObject<Item> FIELD_BINOCULARS = REGISTER.register("field_binoculars", BinocularsItem::new);
-    public static final RegistryObject<Item> TANK_DEPLOYER = REGISTER.register("tank_deployer", TankDeployerItem::new);
+    public static final RegistryObject<Item> TANK_DEPLOYER = REGISTER.register("tank_deployer", () -> new TankDeployerItem(false));
+    public static final RegistryObject<Item> BUGGY_DEPLOYER = REGISTER.register("buggy_deployer", () -> new TankDeployerItem(true));
     public static final RegistryObject<Item> DOG_TAG = REGISTER.register("dog_tag", () -> new Item(new Item.Properties().stacksTo(64)));
     public static final RegistryObject<Item> SOLDIER_SPAWN_EGG = REGISTER.register("soldier_spawn_egg",
             () -> new ForgeSpawnEggItem(ModEntities.SOLDIER, 0x4B5A32, 0xA48E64, new Item.Properties()));

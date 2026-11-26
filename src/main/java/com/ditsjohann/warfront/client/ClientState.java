@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /** Everything the client knows about the battle and the local soldier, for HUD and screens. */
 public final class ClientState {
     public static MatchSnapshot match = MatchSnapshot.NONE;
-    public static SimplePackets.Progress progress = new SimplePackets.Progress(0, 0, 0, 0, 0, 0);
+    public static SimplePackets.Progress progress = new SimplePackets.Progress(0, 0, 0, 0, 0, 0, java.util.Map.of());
 
     // ---- feedback
     public static int hitMarkerTicks;
@@ -44,6 +44,8 @@ public final class ClientState {
     public static final List<int[]> DAMAGE_INDICATORS = new ArrayList<>();
     /** Entities seen firing unsuppressed weapons recently (minimap reveal), id -> client tick. */
     public static final Map<Integer, Long> REVEALED = new ConcurrentHashMap<>();
+    /** Players currently aiming through high-zoom optics (scope glint). */
+    public static final java.util.Set<Integer> GLINTING = ConcurrentHashMap.newKeySet();
 
     public static long now() {
         Minecraft mc = Minecraft.getInstance();
@@ -88,6 +90,7 @@ public final class ClientState {
         match = MatchSnapshot.NONE;
         SCORES.clear();
         FEED.clear();
+        GLINTING.clear();
         announcement = null;
         downed = false;
         suppression = 0;

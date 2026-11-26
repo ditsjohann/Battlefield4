@@ -18,6 +18,9 @@ public final class ModEntities {
     public static final RegistryObject<EntityType<TankEntity>> TANK = REGISTER.register("tank",
             () -> EntityType.Builder.<TankEntity>of(TankEntity::new, MobCategory.MISC).sized(3.4f, 2.3f)
                     .clientTrackingRange(16).updateInterval(1).build("tank"));
+    public static final RegistryObject<EntityType<BuggyEntity>> BUGGY = REGISTER.register("buggy",
+            () -> EntityType.Builder.<BuggyEntity>of(BuggyEntity::new, MobCategory.MISC).sized(2.3f, 1.6f)
+                    .clientTrackingRange(16).updateInterval(1).build("buggy"));
     public static final RegistryObject<EntityType<FragGrenadeEntity>> FRAG_GRENADE = REGISTER.register("frag_grenade",
             () -> EntityType.Builder.<FragGrenadeEntity>of(FragGrenadeEntity::new, MobCategory.MISC).sized(0.25f, 0.25f)
                     .clientTrackingRange(8).updateInterval(1).build("frag_grenade"));

@@ -11,6 +11,7 @@ public final class KeyBinds {
     public static final KeyMapping FIRE_MODE = new KeyMapping("key.warfront.fire_mode", KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, CATEGORY);
     public static final KeyMapping SPOT = new KeyMapping("key.warfront.spot", KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Z, CATEGORY);
     public static final KeyMapping DEPLOY = new KeyMapping("key.warfront.deploy", KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_J, CATEGORY);
+    public static final KeyMapping ORDERS = new KeyMapping("key.warfront.orders", KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V, CATEGORY);
     public static final KeyMapping SCOREBOARD = new KeyMapping("key.warfront.scoreboard", KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_TAB, CATEGORY);
 
     private KeyBinds() {}

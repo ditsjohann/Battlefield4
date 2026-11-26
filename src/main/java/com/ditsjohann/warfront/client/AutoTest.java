@@ -326,21 +326,100 @@ public final class AutoTest {
             case 25 -> {
                 shot(mc, "war_table_screen");
                 mc.setScreen(null);
-                wait = 400;
+                // look at the fuel depot beside flag B
+                server(mc, p -> {
+                    ConquestMatch m = MatchManager.active(p.serverLevel());
+                    if (m == null || m.depotPos == null) return;
+                    BlockPos d = m.depotPos;
+                    p.teleportTo(d.getX() - 18, d.getY() + 8, d.getZ() - 8);
+                });
+                wait = 40;
                 stage = 26;
             }
             case 26 -> {
-                server(mc, p -> telemetry(p.serverLevel()));
-                wait = 400;
+                if (mc.player != null && ClientState.match.active()) {
+                    BlockPos d = ClientState.match.depotPos();
+                    double dx = d.getX() + 0.5 - mc.player.getX(), dz = d.getZ() + 0.5 - mc.player.getZ(), dy = d.getY() - mc.player.getEyeY();
+                    look(mc, (float) (Math.toDegrees(Math.atan2(dz, dx)) - 90), (float) -Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz))));
+                }
+                wait = 10;
                 stage = 27;
             }
             case 27 -> {
+                shot(mc, "depot_standing");
+                server(mc, p -> {
+                    ConquestMatch m = MatchManager.active(p.serverLevel());
+                    if (m != null) m.damageDepot(p.serverLevel(), 100, p);
+                });
+                wait = 26;
+                stage = 28;
+            }
+            case 28 -> {
+                shot(mc, "depot_explosion");
+                wait = 80;
+                stage = 29;
+            }
+            case 29 -> {
+                shot(mc, "depot_smoke");
+                // a buggy with an AI crew member; boarding players always take the wheel (vanilla), so the AI mans the gun
+                server(mc, p -> {
+                    com.ditsjohann.warfront.entity.BuggyEntity b = com.ditsjohann.warfront.entity.BuggyEntity.spawn(p.serverLevel(), p.blockPosition(), Faction.COALITION, null);
+                    if (b == null) return;
+                    ConquestMatch m = MatchManager.active(p.serverLevel());
+                    SoldierEntity driver = SoldierEntity.spawn(p.serverLevel(), p.blockPosition(), Faction.COALITION, com.ditsjohann.warfront.entity.SoldierRole.ASSAULT, -1, m == null ? null : m.id);
+                    if (driver != null) driver.startRiding(b, true);
+                    p.startRiding(b, true);
+                });
+                wait = 40;
+                stage = 30;
+            }
+            case 30 -> {
+                shot(mc, "buggy_gunner");
+                if (mc.player != null && mc.player.getVehicle() instanceof com.ditsjohann.warfront.entity.VehicleEntity v) {
+                    log("client seat=" + v.seatOf(mc.player) + " passengers=" + v.getPassengers().size() + " usesControls=" + v.usesVehicleControls(mc.player));
+                }
+                server(mc, p -> {
+                    if (p.getVehicle() instanceof com.ditsjohann.warfront.entity.VehicleEntity v) {
+                        log("server seat=" + v.seatOf(p) + " gunner=" + (v.gunner() == null ? "none" : v.gunner().getName().getString()));
+                    }
+                });
+                wait = 10;
+                stage = 130;
+            }
+            case 130 -> {
+                server(mc, p -> {
+                    if (p.getVehicle() instanceof com.ditsjohann.warfront.entity.BuggyEntity b) {
+                        log("buggy heat (AI gunner)=" + b.heat());
+                    }
+                });
+                shot(mc, "buggy_firing");
+                server(mc, p -> p.stopRiding());
+                wait = 20;
+                stage = 31;
+            }
+            case 31 -> {
+                mc.setScreen(new com.ditsjohann.warfront.client.screen.CommoRoseScreen(false));
+                wait = 6;
+                stage = 32;
+            }
+            case 32 -> {
+                shot(mc, "commo_rose");
+                mc.setScreen(null);
+                wait = 300;
+                stage = 33;
+            }
+            case 33 -> {
+                server(mc, p -> telemetry(p.serverLevel()));
+                wait = 300;
+                stage = 34;
+            }
+            case 34 -> {
                 server(mc, p -> telemetry(p.serverLevel()));
                 log("done");
-                stage = 28;
+                stage = 35;
                 wait = 20;
             }
-            case 28 -> mc.stop();
+            case 35 -> mc.stop();
             default -> {}
         }
     }
