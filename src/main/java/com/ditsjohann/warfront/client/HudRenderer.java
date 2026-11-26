@@ -410,30 +410,37 @@ public final class HudRenderer {
         }
     }
 
-    /** World offset -> minimap pixels, rotated so the player's facing is up, clamped to the rim. */
+    /** World offset -> minimap pixels: the player's facing is up, their right is right; clamped to the rim. */
     private static int[] project(double dx, double dz, double cos, double sin, double scale, int clamp) {
-        double rx = -(dx * cos + dz * sin);
-        double ry = -(-dx * sin + dz * cos);
-        rx /= scale;
-        ry /= scale;
-        double len = Math.sqrt(rx * rx + ry * ry);
+        // yaw -> forward (fx, fz) = (-sin, cos); right = (-fz, fx)
+        double fx = -sin, fz = cos;
+        double fwd = dx * fx + dz * fz;
+        double right = dx * -fz + dz * fx;
+        double sx = right / scale, sy = -fwd / scale;
+        double len = Math.sqrt(sx * sx + sy * sy);
         if (len > clamp) {
-            rx = rx / len * clamp;
-            ry = ry / len * clamp;
+            sx = sx / len * clamp;
+            sy = sy / len * clamp;
         }
-        return new int[]{(int) Math.round(-rx), (int) Math.round(ry)};
+        return new int[]{(int) Math.round(sx), (int) Math.round(sy)};
     }
 
     // ------------------------------------------------------------------ feed, scores, announcements
+    private static final float FEED_SCALE = 0.75f;
+
     private static void drawKillFeed(GuiGraphics g, Font font, int w) {
-        int y = ClientState.match.active() ? 36 : 8;
+        int y0 = ClientState.match.active() ? 36 : 8;
         Faction mine = ClientState.myFaction();
+        g.pose().pushPose();
+        g.pose().translate(w - 6, y0, 0);
+        g.pose().scale(FEED_SCALE, FEED_SCALE, 1);
+        int y = 0;
         for (ClientState.FeedLine line : ClientState.FEED) {
             var f = line.feed();
             String weapon = "[" + f.weapon() + (f.headshot() ? " ✛" : "") + "]";
             int kw = font.width(f.killer()), ww = font.width(weapon), vw = font.width(f.victim());
             int total = (kw > 0 ? kw + 6 : 0) + ww + 6 + vw + 10;
-            int x = w - total - 8;
+            int x = -total;
             panel(g, x, y, total, 12);
             int tx = x + 5;
             if (kw > 0) {
@@ -445,6 +452,7 @@ public final class HudRenderer {
             g.drawString(font, f.victim(), tx, y + 2, feedColor(f.victimFaction(), mine), true);
             y += 14;
         }
+        g.pose().popPose();
     }
 
     private static int feedColor(int faction, Faction mine) {
@@ -488,8 +496,10 @@ public final class HudRenderer {
             case 2, 4 -> 0xFF6A5A;
             default -> 0xFFFFFF;
         };
-        float scale = a.style() >= 3 ? 3.5f : 2f;
-        int y = a.style() >= 3 ? h / 2 - 50 : h / 4;
+        float scale = a.style() >= 3 ? 3.5f : 1.6f;
+        // sit below the kill feed so the two never overlap
+        int feedBottom = (ClientState.match.active() ? 36 : 8) + Math.round(ClientState.FEED.size() * 14 * FEED_SCALE) + 10;
+        int y = a.style() >= 3 ? h / 2 - 50 : Math.max(h / 4, feedBottom);
         int bw = Math.round(font.width(a.title()) * scale) + 40;
         g.fill(w / 2 - bw / 2, y - 6, w / 2 + bw / 2, y + Math.round(9 * scale) + 16, (alpha * 6 / 10 << 24) | 0x0A0E12);
         g.fill(w / 2 - bw / 2, y - 6, w / 2 + bw / 2, y - 5, (alpha << 24) | col);

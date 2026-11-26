@@ -163,7 +163,18 @@ public final class ConquestMatch {
     }
 
     // ------------------------------------------------------------------ lifecycle
+    private boolean chunksForced;
+
+    /** Keeps every chunk of the battlefield loaded so the armies keep fighting out of the player's view. */
+    public void forceChunks(ServerLevel level, boolean force) {
+        int x0 = (minX + 24) >> 4, x1 = (maxX - 24) >> 4, z0 = (minZ + 24) >> 4, z1 = (maxZ - 24) >> 4;
+        for (int cx = x0; cx <= x1; cx++)
+            for (int cz = z0; cz <= z1; cz++) level.setChunkForced(cx, cz, force);
+        chunksForced = force;
+    }
+
     public void tick(ServerLevel level) {
+        if (!chunksForced && state != ENDED) forceChunks(level, true);
         timer++;
         switch (state) {
             case WARMUP -> {
@@ -339,6 +350,7 @@ public final class ConquestMatch {
 
     /** Removes every entity this match spawned. */
     public void cleanup(ServerLevel level) {
+        forceChunks(level, false);
         AABB area = new AABB(minX - 64, level.getMinBuildHeight(), minZ - 64, maxX + 64, level.getMaxBuildHeight(), maxZ + 64);
         for (Entity e : level.getEntities((Entity) null, area, e -> e instanceof SoldierEntity s && id.equals(s.getMatchId())
                 || e instanceof TankEntity t && id.equals(t.getMatchId()))) {
@@ -363,6 +375,8 @@ public final class ConquestMatch {
         }
         lastAliveA = alive[0];
         lastAliveB = alive[1];
+        // drop AI squads with no living members (before creating new ones this pass)
+        squads.values().removeIf(s -> s.leader == null && !squadSizes.containsKey(s.id) && timer > 40);
         for (Faction f : Faction.values()) {
             int i = f.ordinal();
             if (reinforceCooldown[i] > 0) {
@@ -398,8 +412,6 @@ public final class ConquestMatch {
             }
             reinforceCooldown[i] = 60;
         }
-        // drop empty AI squads
-        squads.values().removeIf(s -> s.leader == null && !squadSizes.containsKey(s.id) && timer > 40);
     }
 
     /** AI spawn: player squads spawn on their leader, others on the owned flag nearest their objective, else HQ. */
@@ -474,6 +486,12 @@ public final class ConquestMatch {
             if (tank != null) {
                 pad.vehicle = tank.getUUID();
                 pad.cooldown = 1200; // one minute between tank respawns
+                // an AI crew takes the tank to the front; players can claim it by climbing in
+                Squad crewSquad = new Squad(nextSquad++, pad.faction);
+                crewSquad.objective = Commander.choose(this, pad.faction, pad.pos, crewSquad.id);
+                squads.put(crewSquad.id, crewSquad);
+                SoldierEntity crew = SoldierEntity.spawn(level, pad.pos.above(), pad.faction, SoldierRole.ENGINEER, crewSquad.id, id);
+                if (crew != null) crew.startRiding(tank, true);
             }
         }
     }

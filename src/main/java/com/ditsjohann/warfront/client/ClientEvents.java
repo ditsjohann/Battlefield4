@@ -26,6 +26,7 @@ public final class ClientEvents {
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
+        AutoTest.tick(mc);
         if (mc.player == null || mc.level == null) return;
         ClientState.tick();
         Tracers.tick();

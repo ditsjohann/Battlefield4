@@ -57,6 +57,7 @@ public class ReviveAllyGoal extends Goal {
 
     @Override
     public void tick() {
+        if (patient == null || !patient.isAlive()) return; // goals are only re-validated every other tick
         s.getLookControl().setLookAt(patient);
         if (s.distanceTo(patient) > 1.8) {
             if (s.getNavigation().isDone()) s.getNavigation().moveTo(patient, 1.25);

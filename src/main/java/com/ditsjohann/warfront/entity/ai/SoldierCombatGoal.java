@@ -45,7 +45,7 @@ public class SoldierCombatGoal extends Goal {
     @Override
     public boolean canUse() {
         LivingEntity t = s.getTarget();
-        return t != null && t.isAlive() && !s.isDowned();
+        return t != null && t.isAlive() && !s.isDowned() && !s.isPassenger();
     }
 
     @Override
@@ -87,7 +87,7 @@ public class SoldierCombatGoal extends Goal {
     @Override
     public void tick() {
         LivingEntity target = s.getTarget();
-        if (target == null) return;
+        if (target == null || !target.isAlive() || s.isDowned() || s.isPassenger()) return;
         ServerLevel level = (ServerLevel) s.level();
         Entity aimAt = target.getVehicle() instanceof TankEntity tank ? tank : target;
         boolean vsArmour = aimAt instanceof TankEntity;

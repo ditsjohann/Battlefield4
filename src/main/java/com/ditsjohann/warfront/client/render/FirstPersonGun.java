@@ -1,7 +1,6 @@
 package com.ditsjohann.warfront.client.render;
 
 import com.ditsjohann.warfront.Warfront;
-import com.ditsjohann.warfront.client.ClientState;
 import com.ditsjohann.warfront.client.GunController;
 import com.ditsjohann.warfront.registry.ModComponents;
 import com.ditsjohann.warfront.weapon.*;
@@ -21,6 +20,8 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.event.RenderHandEvent;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 /**
  * First-person weapon presentation, rendered by hand instead of vanilla's item-in-hand pass so
@@ -137,33 +138,33 @@ public final class FirstPersonGun {
         return GunController.ease(Math.min(in, out));
     }
 
-    /** Draws the player's arms gripping the weapon (pistol grip + handguard). */
+    /** Draws the player's arms gripping the weapon: right hand on the pistol grip, left on the handguard. */
     private static void renderArms(Minecraft mc, AbstractClientPlayer p, PoseStack ps, MultiBufferSource buf, int light, GunType type, float ads, float reload) {
         if (!(mc.getEntityRenderDispatcher().getRenderer(p) instanceof PlayerRenderer pr)) return;
         boolean pistol = type.category == WeaponCategory.PISTOL;
-        // right hand on the pistol grip: grip sits around model (8, 6, 12)
+        // right hand: grip ~ model (8, 6.5, 12); arm runs back, right and down toward the camera corner
+        arm(ps, new Vector3f(0, (6.5f - 8) * S, (12.2f - 8) * S), new Vector3f(0.35f, -0.55f, 1f), true, () -> pr.renderRightHand(ps, buf, light, p));
+        // left hand: handguard (moves to the magazine during reloads)
+        float hz = pistol ? 11.5f : Mth.lerp(reload, -1.5f, 7.5f);
+        float hy = pistol ? 6.8f : Mth.lerp(reload, 8.3f, 5f);
+        arm(ps, new Vector3f(pistol ? -0.01f : -0.012f, (hy - 8) * S, (hz - 8) * S), new Vector3f(pistol ? -0.25f : -0.55f, -0.5f, 1f), false,
+                () -> pr.renderLeftHand(ps, buf, light, p));
+    }
+
+    /**
+     * Renders a player arm whose hand sits exactly at {@code hand} (camera space) and whose
+     * shoulder lies along {@code toShoulder}. Arm model space: pivot at the shoulder, the arm
+     * extends along +Y (down) to the hand about 12px away.
+     */
+    private static void arm(PoseStack ps, Vector3f hand, Vector3f toShoulder, boolean right, Runnable draw) {
         ps.pushPose();
-        ps.translate(0, (6 - 8) * S, (12.5f - 8) * S);
-        ps.mulPose(Axis.XP.rotationDegrees(-75));
-        ps.mulPose(Axis.ZP.rotationDegrees(0));
-        ps.translate(0.0f, 0.62f, 0.02f);
-        ps.scale(0.55f, 0.85f, 0.55f);
-        ps.translate(5f / 16f, 0, 0); // undo the arm pivot so the hand sits at the origin
-        pr.renderRightHand(ps, buf, light, p);
-        ps.popPose();
-        // left hand on the handguard (moves to the magazine during reloads)
-        float hz = pistol ? 11f : -1.5f;
-        float hy = pistol ? 6.5f : 8.4f;
-        hz = Mth.lerp(reload, hz, 7.5f);
-        hy = Mth.lerp(reload, hy, 4.5f);
-        ps.pushPose();
-        ps.translate(-0.2f * S * 16 * 0.0f, (hy - 8) * S, (hz - 8) * S);
-        ps.mulPose(Axis.YP.rotationDegrees(pistol ? 25 : 18));
-        ps.mulPose(Axis.XP.rotationDegrees(-82));
-        ps.translate(-0.02f, 0.66f, 0.0f);
-        ps.scale(0.55f, 0.95f, 0.55f);
-        ps.translate(-5f / 16f, 0, 0);
-        pr.renderLeftHand(ps, buf, light, p);
+        ps.translate(hand.x, hand.y, hand.z);
+        Quaternionf q = new Quaternionf().rotationTo(new Vector3f(0, -1, 0), toShoulder.normalize());
+        ps.mulPose(q);
+        ps.scale(0.62f, 0.62f, 0.62f);
+        // move the arm so its hand end is at the origin
+        ps.translate(right ? 6f / 16f : -6f / 16f, -12.5f / 16f, 0);
+        draw.run();
         ps.popPose();
     }
 
@@ -204,10 +205,6 @@ public final class FirstPersonGun {
         vc.addVertex(pose, x2, y2, z2).setColor(255, 255, 255, 255).setUv(1, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(pose, 0, 0, -1);
         vc.addVertex(pose, x1, y1, z1).setColor(255, 255, 255, 255).setUv(1, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(pose, 0, 0, -1);
         vc.addVertex(pose, x0, y0, z0).setColor(255, 255, 255, 255).setUv(0, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(pose, 0, 0, -1);
-    }
-
-    static boolean unused() {
-        return ClientState.downed;
     }
 
     private FirstPersonGun() {}

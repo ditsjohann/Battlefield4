@@ -88,6 +88,7 @@ def gen_parts():
                     c = shade(c, 0.82)  # subtle bevel edge
                 px[u + x, v + y] = c
     save(img, "entity", "parts.png")
+    save(img, "item", "parts.png")  # item models may only use the block/item atlas
 
 
 # ------------------------------------------------------------------ soldier skins

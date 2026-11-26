@@ -164,8 +164,12 @@ public final class BulletManager {
 
         if (blockHit.getType() == HitResult.Type.BLOCK) {
             if (!hitBlock(level, b, blockHit)) return false;
-            // penetrated: continue from just past the impact point this tick
-            b.pos = blockHit.getLocation().add(b.vel.normalize().scale(0.05));
+            // penetrated: continue from where the round exits the block
+            Vec3 dir = b.vel.normalize();
+            Vec3 p = blockHit.getLocation();
+            BlockPos hitPos = blockHit.getBlockPos();
+            for (int i = 0; i < 20 && BlockPos.containing(p).equals(hitPos); i++) p = p.add(dir.scale(0.1));
+            b.pos = p.add(dir.scale(0.02));
         } else {
             b.pos = to;
         }
@@ -185,7 +189,7 @@ public final class BulletManager {
         float damage = b.gun.stats.damageAt(dist / b.rangeMult) * b.damageScale * WarfrontConfig.DAMAGE_MULTIPLIER.get().floatValue();
         boolean headshot = false;
         if (target instanceof LivingEntity le && le.getBbHeight() > 1.2f && le.getBbHeight() < 3.0f) {
-            double headBottom = le.getEyeY() - 0.24;
+            double headBottom = le.getEyeY() - 0.13; // the head proper, not the shoulders
             if (point.y >= headBottom) {
                 headshot = true;
                 damage *= b.gun.stats.headMult;

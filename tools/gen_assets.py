@@ -148,18 +148,37 @@ def suppressor_for(parts):
     return [box([7.1, 8.6, z - 8], [8.9, 10.4, z], "polymer")]
 
 
+# Long guns exceed the model format's -16..32 limit, so geometry is shrunk by GEOM and the
+# display transforms scaled back up by 1/GEOM (net rendered size is unchanged).
+GEOM = 0.6
+
+
+def shrink(elems):
+    out = []
+    for e in elems:
+        e = json.loads(json.dumps(e))
+        e["from"] = [round(8 + (c - 8) * GEOM, 4) for c in e["from"]]
+        e["to"] = [round(8 + (c - 8) * GEOM, 4) for c in e["to"]]
+        if "rotation" in e:
+            e["rotation"]["origin"] = [round(8 + (c - 8) * GEOM, 4) for c in e["rotation"]["origin"]]
+        out.append(e)
+    return out
+
+
 def gun_display(length_units):
     # length_units ~ 30 for a rifle; keep inventory icons readable
-    gui_scale = round(min(0.62, 16.0 / length_units * 0.9), 3)
+    gui_scale = round(min(0.62, 16.0 / length_units * 0.9) / GEOM, 3)
+    k = 1 / GEOM
+    sc = lambda v: [round(v * k, 4)] * 3
     return {
-        "firstperson_righthand": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [0.45, 0.45, 0.45]},
-        "firstperson_lefthand": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [0.45, 0.45, 0.45]},
-        "thirdperson_righthand": {"rotation": [-90, 0, 0], "translation": [0, 1.5, -3.5], "scale": [0.55, 0.55, 0.55]},
-        "thirdperson_lefthand": {"rotation": [-90, 0, 0], "translation": [0, 1.5, -3.5], "scale": [0.55, 0.55, 0.55]},
+        "firstperson_righthand": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": sc(0.45)},
+        "firstperson_lefthand": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": sc(0.45)},
+        "thirdperson_righthand": {"rotation": [-90, 0, 0], "translation": [0, 1.5, -3.5], "scale": sc(0.55)},
+        "thirdperson_lefthand": {"rotation": [-90, 0, 0], "translation": [0, 1.5, -3.5], "scale": sc(0.55)},
         "gui": {"rotation": [0, 90, 0], "translation": [0, 0, 0], "scale": [gui_scale, gui_scale, gui_scale]},
-        "ground": {"rotation": [0, 90, 0], "translation": [0, 2, 0], "scale": [0.4, 0.4, 0.4]},
-        "fixed": {"rotation": [0, 90, 0], "translation": [0, 0, 0], "scale": [0.6, 0.6, 0.6]},
-        "head": {"rotation": [0, 90, 0], "translation": [0, 6, 0], "scale": [0.8, 0.8, 0.8]},
+        "ground": {"rotation": [0, 90, 0], "translation": [0, 2, 0], "scale": sc(0.4)},
+        "fixed": {"rotation": [0, 90, 0], "translation": [0, 0, 0], "scale": sc(0.6)},
+        "head": {"rotation": [0, 90, 0], "translation": [0, 6, 0], "scale": sc(0.8)},
     }
 
 
@@ -177,8 +196,8 @@ def gen_guns():
                 name = f"{gid}_{optic}" + ("_suppressed" if sup else "")
                 elems = list(parts) + OPTICS[optic] + (suppressor_for(parts) if sup else [])
                 write(os.path.join(A, "models", "item", "gun", name + ".json"),
-                      {"textures": {"parts": "warfront:entity/parts", "particle": "warfront:entity/parts"},
-                       "elements": elems, "display": disp, "gui_light": "front"})
+                      {"textures": {"parts": "warfront:item/parts", "particle": "warfront:item/parts"},
+                       "elements": shrink(elems), "display": disp, "gui_light": "front"})
                 pred = {"warfront:optic": OPTIC_ORDINAL[optic] / 10.0}
                 if sup:
                     pred["warfront:suppressed"] = 1
@@ -186,8 +205,8 @@ def gen_guns():
         # base model = default optic without suppressor; overrides ordered so later (more specific) win
         base_elems = list(parts) + OPTICS[GUN_OPTICS[gid][0]]
         write(os.path.join(A, "models", "item", gid + ".json"),
-              {"textures": {"parts": "warfront:entity/parts", "particle": "warfront:entity/parts"},
-               "elements": base_elems, "display": disp, "gui_light": "front", "overrides": overrides})
+              {"textures": {"parts": "warfront:item/parts", "particle": "warfront:item/parts"},
+               "elements": shrink(base_elems), "display": disp, "gui_light": "front", "overrides": overrides})
     write(os.path.join(os.path.dirname(__file__), "gun_sights.json"), {g: s["sight_y"] for g, s in GUNS.items()})
 
 
@@ -206,7 +225,7 @@ def gen_items():
             box([7.4, 4.5, 2], [8.6, 8.5, 3.5], "polymer"), box([9.2, 10, 4], [10.4, 12, 7], "gunmetal"),
             box([7.3, 9, -9.2], [8.7, 10.4, -9], "orange")]
     write(os.path.join(A, "models", "item", "rocket_launcher.json"),
-          {"textures": {"parts": "warfront:entity/parts", "particle": "warfront:entity/parts"}, "elements": tube,
+          {"textures": {"parts": "warfront:item/parts", "particle": "warfront:item/parts"}, "elements": shrink(tube),
            "display": gun_display(30), "gui_light": "front"})
     write(os.path.join(A, "models", "item", "soldier_spawn_egg.json"), {"parent": "minecraft:item/template_spawn_egg"})
     for b in ["war_table", "sandbag", "resupply_crate", "reinforced_concrete", "capture_point"]:

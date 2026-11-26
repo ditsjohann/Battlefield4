@@ -29,7 +29,12 @@ minecraft {
             systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
         }
 
-        register('client')
+        register('client') {
+            // dev harness: WARFRONT_AUTOTEST=1 ./gradlew runClient plays a scripted battle and saves screenshots
+            if (providers.environmentVariable('WARFRONT_AUTOTEST').isPresent()) {
+                args '--width', '1280', '--height', '720'
+            }
+        }
 
         register('server') {
             args '--nogui'

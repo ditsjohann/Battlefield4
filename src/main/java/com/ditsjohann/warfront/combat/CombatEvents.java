@@ -123,6 +123,7 @@ public final class CombatEvents {
     /** A combatant was taken out of the fight: tickets, kill feed and score. */
     private static void announceKill(ServerLevel level, LivingEntity victim, DamageSource src) {
         Entity killer = src.getEntity();
+        if (!(killer instanceof LivingEntity)) killer = null;
         WeaponRecord wr = LAST_WEAPON.remove(victim.getUUID());
         String weapon;
         boolean headshot = false;
@@ -133,6 +134,9 @@ public final class CombatEvents {
             weapon = wr != null && level.getGameTime() - wr.time < 10 ? wr.weapon : "Explosive";
         } else if (src.is(ModDamageTypes.CRUSHED)) {
             weapon = "Roadkill";
+        } else if (src.getDirectEntity() instanceof net.minecraft.world.entity.item.FallingBlockEntity) {
+            weapon = "Collapse";
+            killer = null;
         } else if (killer != null) {
             weapon = "Melee";
         } else {

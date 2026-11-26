@@ -260,7 +260,7 @@ public class SoldierEntity extends PathfinderMob implements FactionMember {
 
     @Override
     protected void customServerAiStep() {
-        if (isDowned()) return;
+        if (isDowned() || getVehicle() instanceof TankEntity) return; // tank crews are driven by the tank
         super.customServerAiStep();
     }
 

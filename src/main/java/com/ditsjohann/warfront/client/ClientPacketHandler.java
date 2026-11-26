@@ -50,7 +50,7 @@ public final class ClientPacketHandler {
 
     public static void killFeed(SimplePackets.KillFeed f) {
         ClientState.FEED.addLast(new ClientState.FeedLine(f, ClientState.now()));
-        while (ClientState.FEED.size() > 6) ClientState.FEED.pollFirst();
+        while (ClientState.FEED.size() > 5) ClientState.FEED.pollFirst();
     }
 
     public static void openDeploy(SimplePackets.OpenDeploy o) {

@@ -36,8 +36,18 @@ public class DeployScreen extends Screen {
 
     private record Spawn(int type, int index, BlockPos pos, String label) {}
 
+    /** The screen lays out on a virtual canvas of at least 520x300 and is scaled down to fit small GUIs. */
+    private float f = 1f;
+    private int vw, vh;
+
     public DeployScreen() {
         super(Component.literal("Deploy"));
+    }
+
+    private void computeScale() {
+        f = Math.min(1f, Math.min(width / 520f, height / 300f));
+        vw = Math.round(width / f);
+        vh = Math.round(height / f);
     }
 
     @Override
@@ -91,22 +101,33 @@ public class DeployScreen extends Screen {
     }
 
     // ------------------------------------------------------------------ layout
-    private int lx() { return 12; }
+    private static final int LW = 116, RW = 156;
 
-    private int mapX() { return 160; }
+    private int lx() { return 8; }
 
-    private int mapW() { return Math.max(160, width - 160 - 200); }
+    private int mapX() { return lx() + LW + 8; }
 
-    private int rx() { return width - 190; }
+    private int mapW() { return Math.max(80, rx() - 8 - mapX()); }
+
+    private int rx() { return vw - RW - 8; }
 
     @Override
-    public void render(GuiGraphics g, int mx, int my, float pt) {
-        super.render(g, mx, my, pt);
+    public void render(GuiGraphics g, int rawMx, int rawMy, float pt) {
+        super.render(g, rawMx, rawMy, pt);
+        computeScale();
+        int mx = Math.round(rawMx / f), my = Math.round(rawMy / f);
+        g.pose().pushPose();
+        g.pose().scale(f, f, 1);
+        renderScaled(g, mx, my);
+        g.pose().popPose();
+    }
+
+    private void renderScaled(GuiGraphics g, int mx, int my) {
         MatchSnapshot m = ClientState.match;
         Faction mine = ClientState.myFaction();
         // ---- header
-        g.fill(0, 0, width, 26, 0xE0101418);
-        g.fill(0, 26, width, 27, UiKit.ACCENT);
+        g.fill(0, 0, vw, 26, 0xE0101418);
+        g.fill(0, 26, vw, 27, UiKit.ACCENT);
         g.pose().pushPose();
         g.pose().translate(12, 7, 0);
         g.pose().scale(1.6f, 1.6f, 1);
@@ -116,22 +137,22 @@ public class DeployScreen extends Screen {
             String army = mine.displayName.toUpperCase();
             g.drawString(font, army, 80, 10, mine == Faction.COALITION ? 0xFF6FA4FF : 0xFFFF6A5A, false);
             String t = "TICKETS  " + (mine == Faction.COALITION ? m.ticketsA() : m.ticketsB()) + " : " + (mine == Faction.COALITION ? m.ticketsB() : m.ticketsA());
-            g.drawString(font, t, width / 2 - font.width(t) / 2, 10, UiKit.TEXT, false);
+            g.drawString(font, t, vw / 2 - font.width(t) / 2, 10, UiKit.TEXT, false);
         }
         String rk = Ranks.name(rank()).toUpperCase() + "  " + ClientState.progress.xp() + " XP";
-        g.drawString(font, rk, width - 12 - font.width(rk), 10, UiKit.ACCENT, false);
+        g.drawString(font, rk, vw - 12 - font.width(rk), 10, UiKit.ACCENT, false);
 
         // ---- kits
         int y = 40;
         UiKit.header(g, font, "KIT", lx(), y);
         y += 16;
         for (Kit k : Kit.values()) {
-            UiKit.button(g, font, k.label.toUpperCase(), lx(), y, 136, 20, mx, my, k == kit, true, 0xFF000000 | k.color);
+            UiKit.button(g, font, k.label.toUpperCase(), lx(), y, LW, 20, mx, my, k == kit, true, 0xFF000000 | k.color);
             y += 23;
         }
         // kit description, wrapped
         y += 4;
-        for (var line : font.split(Component.literal(kit.description), 136)) {
+        for (var line : font.split(Component.literal(kit.description), LW)) {
             g.drawString(font, line, lx(), y, UiKit.DIM, false);
             y += 10;
         }
@@ -154,7 +175,7 @@ public class DeployScreen extends Screen {
         for (GunType gt : kit.primaries) {
             boolean ok = unlocked(gt.rankRequired);
             String label = ok ? gt.displayName : gt.displayName + "  [" + Ranks.shortName(gt.rankRequired) + "]";
-            UiKit.button(g, font, label, x, y, 178, 18, mx, my, gt == gun(), ok, 0);
+            UiKit.button(g, font, label, x, y, RW, 18, mx, my, gt == gun(), ok, 0);
             y += 21;
         }
         GunType gt = gun();
@@ -164,41 +185,36 @@ public class DeployScreen extends Screen {
         y += 16;
         for (Attachment.Slot slot : Attachment.Slot.values()) {
             Attachment a = l.get(slot);
-            UiKit.button(g, font, slot.name().charAt(0) + slot.name().substring(1).toLowerCase() + ": " + a.label, x, y, 178, 18, mx, my, false, true, UiKit.DIM);
+            boolean hover = UiKit.button(g, font, a.label, x, y, RW, 18, mx, my, false, true, UiKit.DIM);
+            if (hover) g.renderTooltip(font, font.split(Component.literal(slot.name() + ": " + a.describe() + "  (click to cycle)"), 160), mx, my);
             y += 21;
         }
-        g.drawString(font, l.optic().describe(), x, y, UiKit.DIM, false);
-        y += 10;
-        g.drawString(font, l.muzzle().describe(), x, y, UiKit.DIM, false);
-        y += 10;
-        g.drawString(font, l.underbarrel().describe(), x, y, UiKit.DIM, false);
-        y += 16;
+        y += 4;
         var st = gt.stats;
-        UiKit.bar(g, font, "Damage", st.damageMax * st.pellets / 19f, x, y, 178);
+        UiKit.bar(g, font, "Damage", st.damageMax * st.pellets / 19f, x, y, RW);
         y += 11;
-        UiKit.bar(g, font, "Fire rate", st.rpm / 900f, x, y, 178);
+        UiKit.bar(g, font, "Fire rate", st.rpm / 900f, x, y, RW);
         y += 11;
-        UiKit.bar(g, font, "Accuracy", 1f - st.hipSpread / 6.5f, x, y, 178);
+        UiKit.bar(g, font, "Accuracy", 1f - st.hipSpread / 6.5f, x, y, RW);
         y += 11;
-        UiKit.bar(g, font, "Range", st.falloffEnd / 130f, x, y, 178);
+        UiKit.bar(g, font, "Range", st.falloffEnd / 130f, x, y, RW);
         y += 11;
-        UiKit.bar(g, font, "Velocity", st.velocity / 30f, x, y, 178);
+        UiKit.bar(g, font, "Velocity", st.velocity / 30f, x, y, RW);
         y += 11;
-        UiKit.bar(g, font, "Magazine", st.magSize / 100f, x, y, 178);
+        UiKit.bar(g, font, "Magazine", st.magSize / 100f, x, y, RW);
 
         // ---- deploy button
         int countdown = Math.max(0, (ClientState.deployCountdown + 19) / 20);
         boolean ready = ClientState.deployCountdown <= 0 && m.active() && m.state() != 2;
         String label = ready ? "DEPLOY  >>" : "DEPLOY IN " + countdown;
-        int bw = 220, bx = width / 2 - bw / 2 + 80 - 80, by = height - 40;
-        bx = mapX() + mapW() / 2 - bw / 2;
+        int bw = Math.min(200, mapW()), bx = mapX() + mapW() / 2 - bw / 2, by = vh - 40;
         g.fill(bx, by, bx + bw, by + 28, ready ? 0xF0F2A33A : 0xA0404850);
         g.drawString(font, label, bx + bw / 2 - font.width(label) / 2, by + 10, ready ? 0xFF101010 : UiKit.TEXT, false);
         Spawn sel = selectedSpawn();
         String sp = "SPAWN: " + (sel == null ? "HQ" : sel.label());
         g.drawString(font, sp, bx + bw / 2 - font.width(sp) / 2, by - 12, UiKit.TEXT, false);
-        String hint = "ESC to close  |  J to reopen";
-        g.drawString(font, hint, width - 12 - font.width(hint), height - 14, UiKit.DIM, false);
+        String hint = "ESC close | J reopen | ENTER deploy";
+        g.drawString(font, hint, mapX(), vh - 10, UiKit.DIM, false);
     }
 
     private static List<String> gadgets(Kit k) {
@@ -217,18 +233,26 @@ public class DeployScreen extends Screen {
 
     /** Map box in screen space: [x, y, w, h], plus world->screen transform. */
     private int[] mapRect() {
-        return new int[]{mapX(), 40, mapW(), height - 40 - 62};
+        return new int[]{mapX(), 40, mapW(), vh - 40 - 58};
     }
 
+    /** Projects a world position onto the tactical map, rotating so the battlefield's long axis fits the panel. */
     private int[] toScreen(BlockPos p) {
         MatchSnapshot m = ClientState.match;
         int[] r = mapRect();
-        float sx = (float) (r[2] - 20) / Math.max(1, m.maxX() - m.minX());
-        float sz = (float) (r[3] - 20) / Math.max(1, m.maxZ() - m.minZ());
-        float s = Math.min(sx, sz);
-        float ox = r[0] + r[2] / 2f - (m.minX() + m.maxX()) / 2f * s;
-        float oz = r[1] + r[3] / 2f - (m.minZ() + m.maxZ()) / 2f * s;
-        return new int[]{Math.round(ox + p.getX() * s), Math.round(oz + p.getZ() * s)};
+        float ex = Math.max(1, m.maxX() - m.minX()), ez = Math.max(1, m.maxZ() - m.minZ());
+        boolean rotate = (r[3] > r[2]) != (ez > ex);
+        float cx = (m.minX() + m.maxX()) / 2f, cz = (m.minZ() + m.maxZ()) / 2f;
+        float dx = p.getX() - cx, dz = p.getZ() - cz;
+        float u = rotate ? -dz : dx, v = rotate ? dx : dz;
+        float eu = rotate ? ez : ex, ev = rotate ? ex : ez;
+        float s = Math.min((r[2] - 24) / eu, (r[3] - 24) / ev);
+        return new int[]{Math.round(r[0] + r[2] / 2f + u * s), Math.round(r[1] + r[3] / 2f + v * s)};
+    }
+
+    private int flagSize() {
+        int[] r = mapRect();
+        return Math.max(5, Math.min(10, Math.min(r[2], r[3]) / 16));
     }
 
     private void drawMap(GuiGraphics g, int mx, int my) {
@@ -237,7 +261,7 @@ public class DeployScreen extends Screen {
         // grid
         for (int gx = r[0]; gx < r[0] + r[2]; gx += 24) g.fill(gx, r[1], gx + 1, r[1] + r[3], 0x18FFFFFF);
         for (int gy = r[1]; gy < r[1] + r[3]; gy += 24) g.fill(r[0], gy, r[0] + r[2], gy + 1, 0x18FFFFFF);
-        g.drawString(font, "TACTICAL MAP - click a spawn point", r[0] + 6, r[1] + 5, UiKit.DIM, false);
+        g.drawString(font, "TACTICAL MAP", r[0] + 4, r[1] + 4, UiKit.DIM, false);
         MatchSnapshot m = ClientState.match;
         if (!m.active()) return;
         Faction mine = ClientState.myFaction();
@@ -260,7 +284,7 @@ public class DeployScreen extends Screen {
             int col = f.owner() < 0 ? 0xFF9A9A9A : f.owner() == my0 ? UiKit.BLUE : UiKit.RED;
             boolean spawnable = spawns.stream().anyMatch(sp -> sp.type() == Deployment.SPAWN_FLAG && sp.pos().equals(f.pos()));
             boolean sel = spawnType == Deployment.SPAWN_FLAG && spawnIndex == m.flags().indexOf(f);
-            int rr = sel ? 12 : 10;
+            int rr = flagSize() + (sel ? 2 : 0);
             g.fill(s[0] - rr - 1, s[1] - rr - 1, s[0] + rr + 1, s[1] + rr + 1, sel ? UiKit.ACCENT : 0xFF0A0A0A);
             g.fill(s[0] - rr, s[1] - rr, s[0] + rr, s[1] + rr, col);
             String l = String.valueOf(f.letter());
@@ -285,7 +309,7 @@ public class DeployScreen extends Screen {
         }
         // squad spawn button
         boolean squadSel = spawnType == Deployment.SPAWN_SQUAD;
-        UiKit.button(g, font, "SPAWN ON SQUAD", r[0] + r[2] - 112, r[1] + r[3] - 24, 106, 18, mx, my, squadSel, true, 0xFF7AFF7A);
+        UiKit.button(g, font, "SQUAD", r[0] + r[2] - 50, r[1] + r[3] - 22, 46, 18, mx, my, squadSel, true, 0xFF7AFF7A);
         // player marker
         var p = Minecraft.getInstance().player;
         if (p != null) {
@@ -303,11 +327,13 @@ public class DeployScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mx, double my, int button) {
+    public boolean mouseClicked(double rawMx, double rawMy, int button) {
+        computeScale();
+        double mx = rawMx / f, my = rawMy / f;
         // kits
         int y = 56;
         for (Kit k : Kit.values()) {
-            if (UiKit.inside(mx, my, lx(), y, 136, 20)) {
+            if (UiKit.inside(mx, my, lx(), y, LW, 20)) {
                 kit = k;
                 click();
                 return true;
@@ -318,7 +344,7 @@ public class DeployScreen extends Screen {
         int x = rx();
         y = 56;
         for (GunType gt : kit.primaries) {
-            if (UiKit.inside(mx, my, x, y, 178, 18) && unlocked(gt.rankRequired)) {
+            if (UiKit.inside(mx, my, x, y, RW, 18) && unlocked(gt.rankRequired)) {
                 GUN.put(kit, gt);
                 click();
                 return true;
@@ -328,7 +354,7 @@ public class DeployScreen extends Screen {
         y += 20;
         GunType gt = gun();
         for (Attachment.Slot slot : Attachment.Slot.values()) {
-            if (UiKit.inside(mx, my, x, y, 178, 18)) {
+            if (UiKit.inside(mx, my, x, y, RW, 18)) {
                 cycleAttachment(gt, slot, button == 1 ? -1 : 1);
                 click();
                 return true;
@@ -338,7 +364,7 @@ public class DeployScreen extends Screen {
         // map spawn points
         MatchSnapshot m = ClientState.match;
         int[] r = mapRect();
-        if (UiKit.inside(mx, my, r[0] + r[2] - 112, r[1] + r[3] - 24, 106, 18)) {
+        if (UiKit.inside(mx, my, r[0] + r[2] - 50, r[1] + r[3] - 22, 46, 18)) {
             spawnType = Deployment.SPAWN_SQUAD;
             spawnIndex = 0;
             click();
@@ -347,7 +373,7 @@ public class DeployScreen extends Screen {
         for (Spawn sp : spawns()) {
             if (sp.pos() == null) continue;
             int[] s = toScreen(sp.pos());
-            if (Math.abs(mx - s[0]) <= 12 && Math.abs(my - s[1]) <= 12) {
+            if (Math.abs(mx - s[0]) <= flagSize() + 2 && Math.abs(my - s[1]) <= flagSize() + 2) {
                 spawnType = sp.type();
                 spawnIndex = sp.index();
                 click();
@@ -355,12 +381,12 @@ public class DeployScreen extends Screen {
             }
         }
         // deploy
-        int bw = 220, bx = mapX() + mapW() / 2 - bw / 2, by = height - 40;
+        int bw = Math.min(200, mapW()), bx = mapX() + mapW() / 2 - bw / 2, by = vh - 40;
         if (UiKit.inside(mx, my, bx, by, bw, 28) && ClientState.deployCountdown <= 0 && m.active()) {
             deploy();
             return true;
         }
-        return super.mouseClicked(mx, my, button);
+        return super.mouseClicked(rawMx, rawMy, button);
     }
 
     @Override
